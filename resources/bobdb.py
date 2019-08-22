@@ -29,7 +29,19 @@ class BobDb:
 		except Exception as e:
 			print(f'{e}')
 			return False
-	
+
+	def player_update(self, battletag, data):
+		update = ', '.join([f'{k}=(?)' for k in data.keys()])
+		sql = f'UPDATE players SET {update} WHERE battletag=(?)'
+		values = list(data.values())
+		values.append(battletag)
+		self.cursor.execute(sql, values)
+		if self.cursor.rowcount > 0:
+			self._commit()
+			return True
+		else:
+			return False
+
 	def player_delete(self, battletag):
 		sql = 'DELETE FROM players WHERE battletag=(?)'
 		self.cursor.execute(sql, (battletag, ))
@@ -42,6 +54,12 @@ class BobDb:
 		
 		return True if len(row) > 0 else False
 
+	def player_get_battletags(self):
+		sql = 'SELECT battletag FROM players'
+		row = self.cursor.execute(sql, ).fetchall()
+		
+		return row
+	
 	def discord_player_add_to_channel(self, discord_channel_id, battletag, nickname, discord_user, added_date_utc):
 		sql = '''
 		INSERT INTO discord_channels (

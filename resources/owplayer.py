@@ -15,10 +15,11 @@ class OWPlayer:
 		try:
 			async with aiohttp.ClientSession() as session:
 				r = await session.get(api_resource, headers=self.headers, timeout=self.api_timeout)
+				self.http_last_status = r.status
 				if r.status == 200:
 					return await r.json()
 				else:
-					self.http_last_status = r.status
+					
 					return False
 		except Exception as e:
 			print(f'_http_get failed: ({r.status}) {e}')
@@ -33,36 +34,55 @@ class OWPlayer:
 		return False
 
 	def get_roleRank(self, role):
-		for ratings in self.player['ratings']:
-			if ratings['role'] == role:
-				return ratings['level']
+		try:
+			for ratings in self.player['ratings']:
+				if ratings['role'] == role:
+					return ratings['level']
+		except (KeyError, TypeError):
+			return 0
 
+	@property
+	def battletag(self):
+		if 'name' in self.player:
+			return self.player['name']
 		return False
 
 	@property
-	def name(self):
-		return self.player['name']
-
-	@property
 	def level(self):
-		return self.player['level']
+		if 'level' in self.player:
+			return self.player['level']
+		return False
 
 	@property
 	def private(self):
-		return self.player['private']
+		if 'private' in self.player:
+			return self.player['private']
+		return False
 
 	@property
 	def gamesLost(self):
-		return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesLost']
-
+		try:
+			return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesLost']
+		except (KeyError, TypeError):
+			return 0
+	
 	@property
 	def gamesPlayed(self):
-		return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesPlayed']
-
+		try:
+			return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesPlayed']
+		except (KeyError, TypeError):
+			return 0
+	
 	@property
 	def gamesTied(self):
-		return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesTied']
-
+		try:
+			return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesTied']
+		except (KeyError, TypeError):
+			return 0
+	
 	@property
 	def timePlayed(self):
-		return self.player['competitiveStats']['careerStats']['allHeroes']['game']['timePlayed']
+		try:
+			return self.player['competitiveStats']['careerStats']['allHeroes']['game']['timePlayed']
+		except (KeyError, TypeError):
+			return 0

@@ -35,11 +35,11 @@ async def on_message(message):
 	# command: +follow [player] -> start following 'player' on discord.channel
 	if message.content.startswith('.sradd '):
 		nickname = message.content.split(' ')[1]
-		battletag = message.content.split(' ')[2]
+		battletag = message.content.split(' ')[2].replace('#', '-')
 
 		logger.info(f'{message.content} by {message.author} in {ds}')
 
-		player = await owplayer.get(battletag.replace('#', '-'))
+		player = await owplayer.get(battletag)
 
 		# check if player exists on battlenet
 		if player:
@@ -89,65 +89,64 @@ async def on_message(message):
 			await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
 
 async def main():
-	x = await owplayer.get('NOONE-221541')
-	print('### COMPLETED ###')
-	if x:
-		print('tank:', owplayer.get_roleRank('tank'))
-		print('support:', owplayer.get_roleRank('support'))
-		print('damage', owplayer.get_roleRank('damage'))
-		print('name:', owplayer.name)
-		print('level:', owplayer.level)
-		print('isPrivateProfile:', getattr(owplayer, 'private'))
-		print('gamesLost', owplayer.gamesLost)
-		print('gamesPlayed', owplayer.gamesPlayed)
-		print('gamesTied', owplayer.gamesTied)
-	else:
-		print(owplayer.http_last_status)
-	return False
 	while True:
-		if not db.get_tracked_players():
-			await asyncio.sleep(sleep_between_loops)
-			continue
+		players = db.player_get_battletags()
+		count_total = len(players)
+		count_ok = 0
+		count_fail = 0
+		count_404 = 0
+		count_private = 0
+		
+		for i, player in enumerate(players):
+			
+			battletag = player['battletag']
 
-		account_ids = [account_id['accountId'] for account_id in db.get_tracked_players()]
+			status = 'FAIL'
+			
+			if await owplayer.get(battletag):			
+				data = {
+				'damageRank':		owplayer.get_roleRank('damage'),
+				'tankRank':			owplayer.get_roleRank('tank'),
+				'supportRank':		owplayer.get_roleRank('support'),
+				'gamesLost':		owplayer.gamesLost,
+				'gamesPlayed':		owplayer.gamesPlayed,
+				'gamesTied':		owplayer.gamesTied,
+				'timePlayed':		owplayer.timePlayed,
+				'private':			owplayer.private,
+				'lastGamePlayed':	0,
+				'apiLastChecked':	datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+				'apiLastStatus':	owplayer.http_last_status,
+				}
 
-		# create a nested list sliced every 10th account for batch API requests
-		account_ids_batch = [account_ids[x:x+10] for x in range(0, len(account_ids),10)]
-		matches = []
-
-		for accounts in account_ids_batch:
-			matches += await hungrypubg.get_matchlist_from_many(accounts)
-			await asyncio.sleep(sleep_between_batch)
-
-		logger.debug(f'found {len(matches)} matches from {len(account_ids)} players')
-
-		for match_id in matches:
-
-			if db.match_exists(match_id):
-				continue
-
-			logger.info(f'fetching match {match_id}')
-			data = await hungrypubg.get_match(match_id)
-
-			if data:
-				logger.info(f'insert to db {match_id}')
-				db.match_insert(data['data'])
-
-				logger.info(f'unpacking match {match_id}')
-				await unpack_match(account_ids, data)
+				if db.player_update(battletag, data):
+					status = 'OK'
+					count_ok += 1
 			else:
-				logger.error(f'failed to get match {match_id}')
+				if db.player_update(battletag, {'apiLastStatus': owplayer.http_last_status}):
+					status = f'failed to get player from api - {owplayer.http_last_status}'
+					count_fail += 1
+			
+			if owplayer.private:
+				status = 'private'
+				count_private += 1
+			
+			if owplayer.http_last_status == 404:
+				status = '404 (not found)'
+				count_404 += 1
 
-			# sleep between match requests - not ratelimited
-			await asyncio.sleep(sleep_between_matches)
-
+			out = f'{battletag:<20} {status:<15} [{i} of {count_total} done. ok:{count_ok} fail:{count_fail} private:{count_private} 404:{count_404}]'
+			if status == 'FAIL':
+				logger.critical(out)
+			else:
+				logger.info(out)
+			
+			# sleep between player queries
+			await asyncio.sleep(sleep_between_players)
+		
 		# sleep between loops
 		await asyncio.sleep(sleep_between_loops)
 
 if __name__ == '__main__':
-
-	# create logs directory
-	pathlib.Path('logs/').mkdir(parents=True, exist_ok=True)
 
 	# get config file
 	parser = argparse.ArgumentParser()
@@ -163,18 +162,19 @@ if __name__ == '__main__':
 	cf = configparser.ConfigParser()
 	cf.read(config_file)
 
-	pubg_api_key = cf.get('api', 'pubg_api_key')
 	loglevel = cf.get('general', 'loglevel')
 	database_file = cf.get('general', 'database_file')
 	ignore_time = int(cf.get('general', 'ignore_matches_older_than_hours'))
 
 	base_dir = pathlib.Path(__file__).resolve().parent
-	matches_dir = base_dir.joinpath(cf.get('paths', 'matches'))
+	logs_dir = base_dir.joinpath(cf.get('paths', 'logs'))
 
 	sleep_between_loops = int(cf.get('sleep', 'sleep_between_loops'))
-	sleep_between_matches = int(cf.get('sleep', 'sleep_between_matches'))
-	sleep_between_batch = int(cf.get('sleep', 'sleep_between_batch'))
+	sleep_between_players = int(cf.get('sleep', 'sleep_between_players'))
 
+	# create logs directory
+	pathlib.Path(logs_dir).mkdir(parents=True, exist_ok=True)
+	
 	# create logger
 	logger = logging.getLogger('bob')
 	logger.setLevel(logging.getLevelName(loglevel))
@@ -195,7 +195,7 @@ if __name__ == '__main__':
 	logger.info(f'loglevel: {loglevel}')
 	logger.info(f'config file: {config_file}')
 	logger.info(f'database file: {database_file}')
-	logger.info(f'match files: {matches_dir}')
+	logger.info(f'logs directory: {logs_dir}')
 
 	try:
 		db = BobDb(database_file)
