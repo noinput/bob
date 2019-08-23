@@ -100,10 +100,31 @@ async def main():
 		for i, player in enumerate(players):
 			
 			battletag = player['battletag']
-
 			status = 'FAIL'
 			
-			if await owplayer.get(battletag):			
+			if await owplayer.get(battletag):
+				
+				utcnow = datetime.datetime.utcnow()
+
+				old_player_stats = db.player_get(battletag)
+
+				if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
+					lastGamePlayed = utcnow
+					logger.info('## A NEW GAME WAS PLAYED !! ##')
+					then = old_player_stats['lastGamePlayed']
+					if then != '0':
+						duration = utcnow - then
+						mins, secs = divmod(int(duration.total_seconds()), 60)
+						logger.info(f'last match updated was {mins}mins {secs}seconds ago')
+				else:
+					lastGamePlayed = old_player_stats['lastGamePlayed']
+				
+				if old_player_stats['apiLastChecked'] != '0':
+					then = datetime.datetime.strptime(old_player_stats['apiLastChecked'], '%Y-%m-%d %H:%M:%S')
+					duration = utcnow - then
+					mins, secs = divmod(int(duration.total_seconds()), 60)
+					logger.info(f'last api check was {mins}mins {secs}seconds ago')
+				
 				data = {
 				'damageRank':		owplayer.get_roleRank('damage'),
 				'tankRank':			owplayer.get_roleRank('tank'),
@@ -113,8 +134,8 @@ async def main():
 				'gamesTied':		owplayer.gamesTied,
 				'timePlayed':		owplayer.timePlayed,
 				'private':			owplayer.private,
-				'lastGamePlayed':	0,
-				'apiLastChecked':	datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+				'lastGamePlayed':	lastGamePlayed,
+				'apiLastChecked':	utcnow.strftime('%Y-%m-%d %H:%M:%S'),
 				'apiLastStatus':	owplayer.http_last_status,
 				}
 
@@ -180,14 +201,14 @@ if __name__ == '__main__':
 	logger.setLevel(logging.getLevelName(loglevel))
 
 	handler = logging.StreamHandler()
-	formatter = logging.Formatter('%(asctime)s %(name)10s[%(process)d] %(levelname)7s: %(message)s')
+	formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)7s: %(message)s')
 	handler.setFormatter(formatter)
 	logger.addHandler(handler)
 
 	# file logger
 	fh = TimedRotatingFileHandler('logs/bob.log', when="d", interval=1, backupCount=60)
 	fh.setLevel(logging.DEBUG)
-	formatter = logging.Formatter('%(asctime)s %(name)10s[%(process)d] %(levelname)7s: %(message)s')
+	formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)7s: %(message)s')
 	fh.setFormatter(formatter)
 	logger.addHandler(fh)
 

@@ -53,6 +53,12 @@ class BobDb:
 		row = self.cursor.execute(sql, (battletag, )).fetchall()
 		
 		return True if len(row) > 0 else False
+	
+	def player_get(self, battletag):
+		sql = 'SELECT * FROM players WHERE battletag=(?)'
+		row = self.cursor.execute(sql, (battletag, )).fetchall()
+		
+		return row[0] if len(row) > 0 else False
 
 	def player_get_battletags(self):
 		sql = 'SELECT battletag FROM players'
