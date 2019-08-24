@@ -19,11 +19,11 @@ class BobDb:
 			discord_channels.channelId,
 			
 			players.damageHeroes,
-			MAX(players.damageRank),
+			players.damageRank,
 			players.tankHeroes,
-			MAX(players.tankRank),
+			players.tankRank,
 			players.supportHeroes,
-			MAX(players.supportRank),
+			players.supportRank,
 			players.gamesLost,
 			players.gamesPlayed,
 			players.gamesTied,
@@ -32,31 +32,32 @@ class BobDb:
 			players.lastGamePlayed,
 			players.apiLastChecked,
 			players.apiLastStatus,
-			players.addedDateUtc
+			players.addedDateUtc,
+
+			MAX(players.damageRank, players.tankRank, players.supportRank) as dmg
 
 		FROM
 			discord_channels
 		INNER JOIN players ON discord_channels.battletag = players.battletag	
 		WHERE
 			discord_channels.channelId=(?)
-		GROUP BY
-			discord_channels.nickname
-		ORDER BY 
-			players.damageRank
+		ORDER BY
+			CAST(dmg AS int) DESC
 		'''
 		row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
 
+		rank = 1
+		nicks = []
 		if len(row) > 0:
-			for r in row:
-				print(r['battletag'], r['nickname'], r['apiLastStatus'])
-
+			for i, r in enumerate(row):
+				if r['nickname'] not in nicks:
+					print(rank, r['battletag'], r['nickname'], r['apiLastStatus'], 
+						r['damageRank'], r['tankRank'], r['supportRank'], r['dmg'])
+					nicks.append(r['nickname'])
+					rank += 1
 		print(len(row))
 
-db = BobDb('bob.db')
-
-db.get_leaderboard()
-dev_channel = 613551977455943680
-db.get_leaderboard(dev_channel)
+db = BobDb('bob_dummy.db')
 
 overwatch_norge = 303681642126376961
 db.get_leaderboard(overwatch_norge)

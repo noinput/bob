@@ -1,17 +1,30 @@
 import asyncio
 import aiohttp
 import json
+import time
 
 class OWPlayer:
 
-	def __init__(self):
+	def __init__(self, timelimit=2):
 		
+		self.last_run = self._time
+		self.timelimit = timelimit
 		self.api_timeout = 10
 		self.headers = {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json; charset=UTF-8'}
 
 	async def _http_get(self, api_resource):
+		
+		# only do one request every 3 seconds
+		if self.last_run <= self._time:
+			self.last_run = self._time + self.timelimit
+			await asyncio.sleep(0)
+		else:
+			sleep_time = self.last_run - self._time
+			self.last_run = self.last_run + self.timelimit
+			await asyncio.sleep(sleep_time)
+		
 		try:
 			async with aiohttp.ClientSession() as session:
 				r = await session.get(api_resource, headers=self.headers, timeout=self.api_timeout)
@@ -19,7 +32,6 @@ class OWPlayer:
 				if r.status == 200:
 					return await r.json()
 				else:
-					
 					return False
 		except Exception as e:
 			print(f'_http_get failed: ({r.status}) {e}')
@@ -86,3 +98,11 @@ class OWPlayer:
 			return self.player['competitiveStats']['careerStats']['allHeroes']['game']['timePlayed']
 		except (KeyError, TypeError):
 			return 0
+	
+	@property
+	def _time(self):
+		return int(time.time())
+
+	@property
+	def _utcnow(self):
+		return  datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
