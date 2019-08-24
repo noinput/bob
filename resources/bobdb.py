@@ -143,3 +143,57 @@ class BobDb:
 			return True
 		else:
 			return False
+	
+	def get_leaderboard(self, discord_channel_id=0):
+		sql = '''
+		SELECT 
+			discord_channels.battletag,
+			discord_channels.nickname,
+			discord_channels.channelId,
+			
+			players.damageHeroes,
+			players.damageRank,
+			players.tankHeroes,
+			players.tankRank,
+			players.supportHeroes,
+			players.supportRank,
+			players.gamesLost,
+			players.gamesPlayed,
+			players.gamesTied,
+			players.timePlayed,
+			players.private,
+			players.lastGamePlayed,
+			players.apiLastChecked,
+			players.apiLastStatus,
+			players.addedDateUtc,
+
+			MAX(players.damageRank, players.tankRank, players.supportRank) as dmg,
+			
+			CASE
+				WHEN players.damageRank > players.tankRank AND players.damageRank > players.supportRank THEN 'damage'
+				WHEN players.tankRank > players.damageRank AND players.tankRank > players.supportRank THEN 'tank'
+				WHEN players.supportRank > players.damageRank AND players.supportRank > players.tankRank THEN 'support'
+				ELSE False
+			END AS dmgType
+		
+		FROM
+			discord_channels
+		INNER JOIN players ON discord_channels.battletag = players.battletag	
+		WHERE
+			discord_channels.channelId=(?)
+		ORDER BY
+			CAST(dmg AS int) DESC
+		'''
+
+		row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
+
+		nicks = []
+		leaderboard = []
+
+		if len(row) > 0:
+			for player in row:
+				if player['nickname'] not in nicks:
+					leaderboard.append(player)
+					nicks.append(player['nickname'])
+
+		return leaderboard

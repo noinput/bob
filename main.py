@@ -158,6 +158,48 @@ async def on_message(message):
 			else:
 				logger.info(f'{battletag} not found in players db')
 				await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
+	
+	if message.content.startswith('.embedtest'):
+		logger.info(f'{message.content} by {message.author} in {ds}')
+		
+		if message.author.id == discord_owner_id:
+			cid = message.content.split(' ')[1] if len(message.content.split(' ')) == 2 else message.channel.id
+
+			print(cid)
+
+			embed=discord.Embed(
+				title=f':trophy: Leaderboards for {bot.get_channel(message.channel.id)} :trophy:',
+				description=f'posted daily. use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
+
+			leaderboard = db.get_leaderboard(cid)
+			
+			embed_rank_table = ''
+			
+			for i, player in enumerate(leaderboard):	
+				if i >= 20:
+					break
+				
+				# set custom emjois for roles in leaderboard [print(l) for l in message.guild.emojis]
+				if player['dmgType'] == 'damage':
+					role_emoji = '<:owdamage:614835972210688000>'
+				
+				if player['dmgType'] == 'tank':
+					role_emoji = '<:owtank:614835972315807754>'
+
+				if player['dmgType'] == 'support':
+					role_emoji = '<:owsupport:614835972215144457>'
+
+				entry = f"\n{i+1}. **{player['nickname']}** ({player['battletag']}){role_emoji}{player['dmg']}"
+				embed_rank_table += entry
+				
+				if i % 10 == 0 and i > 5:
+					embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
+					embed_rank_table = ''
+			
+			if len(embed_rank_table) > 0:
+				embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
+
+			await message.channel.send(embed=embed)
 
 async def main():
 	await asyncio.sleep(10)
