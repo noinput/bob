@@ -1,37 +1,18 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "players" (
-	"battletag"	TEXT UNIQUE,
-	"damageHeroes"	TEXT,
-	"damageRank"	INTEGER,
-	"tankHeroes"	TEXT,
-	"tankRank"	INTEGER,
-	"supportHeroes"	TEXT,
-	"supportRank"	INTEGER,
-	"gamesLost"	INTEGER,
-	"gamesPlayed"	INTEGER,
-	"gamesTied"	INTEGER,
-	"timePlayed"	TEXT,
-	"private"	TEXT,
-	"lastGamePlayed"	TEXT,
-	"apiLastChecked"	TEXT,
-	"apiLastStatus"	TEXT,
-	"addedDateUtc"	TEXT
-);
-CREATE TABLE IF NOT EXISTS "seasons" (
-	"season"	INTEGER,
-	"startDate"	TEXT,
-	"endDate"	TEXT
-);
-CREATE TABLE IF NOT EXISTS "discord_channels" (
+CREATE TABLE IF NOT EXISTS "discord_channel_admins" (
 	"channelId"	INTEGER,
-	"battletag"	TEXT,
-	"nickname"	TEXT,
-	"addedByDiscordUser"	TEXT,
+	"discordUser"	INTEGER,
 	"addedDateUtc"	TEXT,
-	FOREIGN KEY("battletag") REFERENCES "players"("battletag") ON DELETE CASCADE
+	FOREIGN KEY("channelId") REFERENCES "discord_channels"("channelId") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "botActions" (
+	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"dateUtc"	TEXT,
+	"action"	TEXT,
+	"isCompleted"	TEXT
 );
 CREATE TABLE IF NOT EXISTS "statsHistory" (
-	"date"	TEXT,
+	"dateUtc"	TEXT,
 	"battletag "	TEXT,
 	"damageRank"	INTEGER,
 	"tankRank"	INTEGER,
@@ -43,10 +24,35 @@ CREATE TABLE IF NOT EXISTS "statsHistory" (
 	"timePlayed"	TEXT,
 	FOREIGN KEY("battletag ") REFERENCES "players"("battletag") ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS "botActions" (
-	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-	"date"	TEXT,
-	"action"	TEXT,
-	"isCompleted"	TEXT
+CREATE TABLE IF NOT EXISTS "seasons" (
+	"season"	INTEGER,
+	"startDateUtc"	TEXT,
+	"endDateUtc"	TEXT
+);
+CREATE TABLE IF NOT EXISTS "players" (
+	"battletag"	TEXT UNIQUE,
+	"damageHeroes"	TEXT,
+	"damageRank"	INTEGER DEFAULT 0,
+	"tankHeroes"	TEXT,
+	"tankRank"	INTEGER DEFAULT 0,
+	"supportHeroes"	TEXT,
+	"supportRank"	INTEGER DEFAULT 0,
+	"gamesLost"	INTEGER DEFAULT 0,
+	"gamesPlayed"	INTEGER DEFAULT 0,
+	"gamesTied"	INTEGER DEFAULT 0,
+	"timePlayed"	TEXT,
+	"private"	TEXT,
+	"lastGamePlayed"	TEXT,
+	"apiLastChecked"	TEXT,
+	"apiLastStatus"	TEXT,
+	"addedDateUtc"	TEXT
+);
+CREATE TABLE IF NOT EXISTS "discord_channels" (
+	"channelId"	INTEGER,
+	"battletag"	TEXT,
+	"nickname"	TEXT,
+	"addedByDiscordUser"	TEXT,
+	"addedDateUtc"	TEXT,
+	FOREIGN KEY("battletag") REFERENCES "players"("battletag") ON DELETE CASCADE
 );
 COMMIT;

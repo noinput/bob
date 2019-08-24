@@ -9,7 +9,7 @@ class OWPlayer:
 		
 		self.last_run = self._time
 		self.timelimit = timelimit
-		self.api_timeout = 10
+		self.api_timeout = 11
 		self.headers = {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json; charset=UTF-8'}
@@ -33,6 +33,10 @@ class OWPlayer:
 					return await r.json()
 				else:
 					return False
+		except asyncio.TimeoutError:
+			print(f'timed out {api_resource}')
+			return False
+
 		except Exception as e:
 			print(f'_http_get failed: ({r.status}) {e}')
 			return False

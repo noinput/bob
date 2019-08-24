@@ -32,92 +32,138 @@ async def on_message(message):
 		 await message.channel.send(
 		 	f'https://discordapp.com/oauth2/authorize?&client_id={bot.user.id}&scope=bot&permissions=0')
 
-	# command: +follow [player] -> start following 'player' on discord.channel
+	# command: .srgiveadmin [@mention] (owner and guild members with manage guild permissions only)
+	if message.content.startswith('.srgiveadmin'):
+		if message.author.id == discord_owner_id or message.author.guild_permissions.manage_guild:
+			logger.info(f'{message.content} by {message.author} in {ds}')
+			
+			if len(message.content.split(' ')) != 2:
+				await message.channel.send(f'{message.author.mention} Syntax: `.srgiveadmin @mention`')
+			
+			else:
+				discord_mention = message.content.split(' ')[1]
+				discord_user_id = ''.join(i for i in discord_mention if i.isdigit())
+
+				if db.discord_admin_on_channel(message.channel.id, discord_user_id):
+					await message.channel.send(f'{discord_mention} is already an **admin** on **{bot.get_channel(message.channel.id)}**')
+				else:
+					if db.discord_admin_add_to_channel(message.channel.id, discord_user_id, utcnow):
+						await message.channel.send(f'{discord_mention} granted **admin** on **{bot.get_channel(message.channel.id)}**')
+	
+	# command: .srtakeadmin [@mention] (owner and guild members with manage guild permissions only)
+	if message.content.startswith('.srtakeadmin'):
+		if message.author.id == discord_owner_id or message.author.guild_permissions.manage_guild:
+			logger.info(f'{message.content} by {message.author} in {ds}')
+			
+			if len(message.content.split(' ')) != 2:
+				await message.channel.send(f'{message.author.mention} Syntax: `.srtakeadmin @mention`')
+
+			else:
+				discord_mention = message.content.split(' ')[1]
+				discord_user_id = ''.join(i for i in discord_mention if i.isdigit())
+
+				if db.discord_admin_on_channel(message.channel.id, discord_user_id):
+					if db.discord_admin_delete_from_channel(message.channel.id, discord_user_id):
+						await message.channel.send(f'{discord_mention} removed as **admin** on **{bot.get_channel(message.channel.id)}**')
+				else:
+						await message.channel.send(f'{discord_mention} is not an **admin** on **{bot.get_channel(message.channel.id)}**')
+
+	# command: .sradd [nick] [battletag] -> add [battletag] as [nick] to leaderboard on current discord_channel
 	if message.content.startswith('.sradd'):
 		logger.info(f'{message.content} by {message.author} in {ds}')
 
 		if len(message.content.split(' ')) != 3:
 			await message.channel.send(f'{message.author.mention} Syntax: `.sradd nickname battletag#999` - Example: `.sradd Chaos Chaos#1999`')
-			return
-
-		nickname = message.content.split(' ')[1]
-		battletag = message.content.split(' ')[2].replace('#', '-')
-
-		player = await owplayer.get(battletag)
-
-		# check if player exists on battlenet
-		if player:
-			logger.debug(f'{battletag} found on battlenet')
-
-			# check if player exists in database
-			if db.player_exists(battletag):
-				logger.debug(f'{battletag} found in players db')
-			else:
-				if db.player_insert(battletag, utcnow):
-					logger.info(f'{battletag} added to players db')
-
-			# check if player is already added on discord channel
-			if db.discord_player_is_on_channel(battletag, message.channel.id):
-				logger.info(f'{battletag} already added on {ds}')
-				await message.channel.send(f'{message.author.mention} **{battletag}** already added!')
-			else:
-				if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, utcnow):
-					logger.info(f'{battletag} added as {nickname} on {ds}')
-					await message.channel.send(f'{message.author.mention} **{battletag}** added as **{nickname}**')
+		
 		else:
-			logger.info(f'{battletag} not found on battlenet')
-			await message.channel.send(f'{message.author.mention} **{battletag}** not found on battlenet')
+			nickname = message.content.split(' ')[1]
+			battletag = message.content.split(' ')[2].replace('#', '-')
 
-	# command: -follow [player] -> stop following 'player' on discord.channel
+			player = await owplayer.get(battletag)
+
+			# check if player exists on battlenet
+			if player:
+				logger.debug(f'{battletag} found on battlenet')
+
+				# check if player exists in database
+				if db.player_exists(battletag):
+					logger.debug(f'{battletag} found in players db')
+				else:
+					if db.player_insert(battletag, utcnow):
+						logger.info(f'{battletag} added to players db')
+
+				# check if player is already added on discord channel
+				if db.discord_player_is_on_channel(battletag, message.channel.id):
+					logger.info(f'{battletag} already added on {ds}')
+					await message.channel.send(f'{message.author.mention} **{battletag}** already added!')
+				else:
+					if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, utcnow):
+						logger.info(f'{battletag} added as {nickname} on {ds}')
+						await message.channel.send(f'{message.author.mention} **{battletag}** added as **{nickname}**')
+			else:
+				logger.info(f'{battletag} not found on battlenet')
+				await message.channel.send(f'{message.author.mention} **{battletag}** not found on battlenet - make sure the battletag is **CaSeSeNiTiVe#1234**')
+
+	# command: .srdel [battletag] -> removes [battletag] for leaderboard on current discord_channel
 	if message.content.startswith('.srdel'):
 		logger.info(f'{message.content} by {message.author} in {ds}')
 
 		if len(message.content.split(' ')) != 2:
 			await message.channel.send(f'{message.author.mention} Syntax: `.srdel battletag#999` - Example: `.sradd Chaos#1999`')
-			return
-
-		allow = False
-		battletag = message.content.split(' ')[1].replace('#', '-')
-		#print((message.author.server_permissions.manage_server))
 		
-		if db.discord_user_is_allowed_delete(battletag, message.author.id):
-			print('is addedbydiscorduser')
-			allow = True
-		if message.author.id == discord_owner_id:
-			print('owner')
-			allow = True
-
-		#if not message.author.server_permissions.manage_server or not db.discord_user_is_allowed_delete(battletag, message.author.id):
-
-		## ADD CHECK IF USER IN EXISTS IN DB
-		if not db.discord_user_is_allowed_delete(battletag, message.author.id):
-			await message.channel.send(f'{message.author.mention} not allowed')
-			return
-
-		##### WORK IN PROGRESS DISCORD PREMISSIONS
-
-		# check if player exists in database
-		if db.player_exists(battletag):
-			logger.debug(f'{battletag} found in players db')
-
-			# check if player is added on discord channel
-			if db.discord_player_is_on_channel(battletag, message.channel.id):
-				logger.debug(f'{battletag} found on {ds}')
-				
-				if db.discord_player_delete_from_channel(battletag, message.channel.id):
-					logger.info(f'{message.author.mention} {battletag} deleted')
-					await message.channel.send(f'{message.author.mention} **{battletag}** removed')
-
-			else:
-				logger.info(f'{battletag} not found on {ds}')
-				await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
 		else:
-			logger.info(f'{battletag} not found in players db')
-			await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
+			allow = False
+			battletag = message.content.split(' ')[1].replace('#', '-')
+			
+			if db.discord_admin_on_channel(message.channel.id, message.author.id):
+				print('is discord channel admin (added by owner)')
+				allow = True
+
+			if db.discord_user_is_allowed_delete(battletag, message.author.id):
+				print('is addedbydiscorduser')
+				allow = True
+			
+			if message.author.id == discord_owner_id:
+				print('owner')
+				allow = True
+			
+			if message.author.guild_permissions.manage_guild:
+				print('has manage server')
+				allow = True
+
+			if db.discord_user_is_allowed_delete(battletag, message.author.id):
+				print('self delete')
+				allow = True
+
+			# check if player exists in database
+			if db.player_exists(battletag):
+				logger.debug(f'{battletag} found in players db')
+				
+				# check if discord user is allowed to delete
+				if not allow:
+					await message.channel.send(f'{message.author.mention} not allowed')
+				
+				else:
+					# check if player is added on discord channel
+					if db.discord_player_is_on_channel(battletag, message.channel.id):
+						logger.debug(f'{battletag} found on {ds}')
+						
+						if db.discord_player_delete_from_channel(battletag, message.channel.id):
+							logger.info(f'{message.author.mention} {battletag} deleted')
+							await message.channel.send(f'{message.author.mention} **{battletag}** removed')
+
+					else:
+						logger.info(f'{battletag} not found on {ds}')
+						await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
+			else:
+				logger.info(f'{battletag} not found in players db')
+				await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
 
 async def main():
 	await asyncio.sleep(10)
+	
 	while True:
+		
 		players = db.player_get_battletags()
 		count_total = len(players)
 		count_ok = 0
@@ -125,6 +171,8 @@ async def main():
 		count_404 = 0
 		count_private = 0
 		count_inactive = 0
+
+		## inactive and fail dupli count - intended or bug?
 		
 		for i, player in enumerate(players):
 			
@@ -139,22 +187,24 @@ async def main():
 
 				if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
 					
+					## DEBUG OUTPUT
 					lastGamePlayed = utcnow
 					logger.info(f'## A NEW GAME WAS PLAYED !! {battletag} ##')
 					logger.info(old_player_stats['lastGamePlayed'])
 					logger.info(type(old_player_stats['lastGamePlayed']))
 					logger.info(type(utcnow))
+					
 					if isinstance(old_player_stats['lastGamePlayed'], datetime.datetime):
-						print('YES!!!')
 						then = old_player_stats['lastGamePlayed']
 						duration = utcnow - then
 						mins, secs = divmod(int(duration.total_seconds()), 60)
 						logger.debug(f'last match updated was {mins}mins {secs}seconds ago')
-					# THIS CAN BE REMOVED WHEN NOT DEBUGGING!!! ##
+					
+					## memba to move this shit when not debugging
 					else:
 						then = utcnow
 						logger.info(then)
-						logger.info(f'match played was first change seen saved lastGamePlayed as {lastGamePlayed} for {battletag}')
+						logger.info(f'match played was (FIRST CHANGE ON SEEN ON PROFILE) -> saved lastGamePlayed as {lastGamePlayed} for {battletag}')
 				else:
 					lastGamePlayed = old_player_stats['lastGamePlayed']
 					count_inactive += 1

@@ -66,7 +66,7 @@ class BobDb:
 		
 		return row
 	
-	def discord_player_add_to_channel(self, discord_channel_id, battletag, nickname, discord_user, added_date_utc):
+	def discord_player_add_to_channel(self, discord_channel_id, battletag, nickname, discord_user_id, added_date_utc):
 		sql = '''
 		INSERT INTO discord_channels (
 		channelId,
@@ -82,7 +82,7 @@ class BobDb:
 				discord_channel_id,
 				battletag,
 				nickname,
-				discord_user,
+				discord_user_id,
 				added_date_utc))
 			self._commit()
 			return True
@@ -103,6 +103,38 @@ class BobDb:
 
 		return True if len(row) > 0 else False
 	
+	def discord_admin_add_to_channel(self, discord_channel_id, discord_user_id, added_date_utc):
+		sql = '''
+		INSERT INTO discord_channel_admins (
+		channelId,
+		discordUser,
+		addedDateUtc)
+		VALUES (?, ?, ?)
+		'''
+		try:
+			self.cursor.execute(sql, (
+				discord_channel_id,
+				discord_user_id,
+				added_date_utc))
+			self._commit()
+			return True
+
+		except Exception as e:
+			print(f'{e}')
+			return False
+	
+	def discord_admin_delete_from_channel(self, discord_channel_id, discord_user_id):
+		sql = 'DELETE FROM discord_channel_admins WHERE channelId=(?) AND discordUser=(?)'
+		self.cursor.execute(sql, (discord_channel_id, discord_user_id))
+		self._commit()
+		return True
+	
+	def discord_admin_on_channel(self, discord_channel_id, discord_user_id):
+		sql = 'SELECT discordUser FROM discord_channel_admins WHERE channelId=(?) AND discordUser=(?)'
+		row = self.cursor.execute(sql, (discord_channel_id, discord_user_id)).fetchall()
+
+		return True if len(row) > 0 else False
+
 	def discord_user_is_allowed_delete(self, battletag, discord_user_id):
 		sql = 'SELECT battletag FROM discord_channels WHERE battletag=(?) AND addedByDiscordUser=(?)'
 		row = self.cursor.execute(sql, (battletag, discord_user_id)).fetchall()
