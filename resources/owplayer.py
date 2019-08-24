@@ -5,11 +5,11 @@ import time
 
 class OWPlayer:
 
-	def __init__(self, timelimit=2):
+	def __init__(self, timelimit=3):
 		
 		self.last_run = self._time
 		self.timelimit = timelimit
-		self.api_timeout = 11
+		self.api_timeout = 10
 		self.headers = {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json; charset=UTF-8'}
@@ -109,4 +109,47 @@ class OWPlayer:
 
 	@property
 	def _utcnow(self):
-		return  datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+		return datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+	@property
+	def sorted_heroes(self):
+		if 'competitiveStats' in self.player:
+			if 'topHeroes' in self.player['competitiveStats']:
+				try:
+					heroes = self.player['competitiveStats']['topHeroes']
+					heroes_time_played = {}
+					
+					for hero in heroes:
+						heroes_time_played[hero] = heroes[hero]['timePlayed'].replace(':', '')
+
+					heroes_sorted = sorted(heroes_time_played.items(), key=lambda x: int(x[1]), reverse=True)
+					tankHeroes = []
+					damageHeroes = []
+					supportHeroes = []
+					
+					damageHeroes_all = ['ashe', 'bastion', 'doomfist', 'genji', 'hanzo', 'junkrat', 'mccree', 'mei',
+						'pharah', 'reaper', 'soldier76', 'sombra', 'symmetra', 'torbjorn', 'tracer', 'widowmaker']
+					tankHeroes_all = ['dVa', 'orisa', 'reinhardt', 'roadhog', 'sigma', 'winston', 'wreckingBall', 'zarya']
+					supportHeroes_all = ['ana', 'baptiste', 'brigitte', 'lucio', 'mercy', 'moira', 'zenyatta']
+					
+					for hero, time_played in heroes_sorted:
+						if hero in damageHeroes_all:
+							damageHeroes.append(hero)
+
+						if hero in tankHeroes_all:
+							tankHeroes.append(hero)
+						
+						if hero in supportHeroes_all:
+							supportHeroes.append(hero)
+					
+					returndict = {
+					'damage_heroes': damageHeroes,
+					'tank_heroes': tankHeroes,
+					'support_heroes': supportHeroes}
+					
+					return returndict
+				
+				except Exception as e:
+					return False
+
+		return False
