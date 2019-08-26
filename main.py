@@ -28,7 +28,7 @@ async def on_message(message):
     if str(message.channel.type) != 'text':
         return
 
-    ds = f'{bot.get_guild(message.guild.id)} @ {str(bot.get_channel(message.channel.id)).title()}'
+    ds = f'{str(bot.get_channel(message.channel.id)).title()} @ {str(bot.get_guild(message.guild.id))}'
     utcnow = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     # command: boblink -> replies with bot invite link
@@ -386,17 +386,18 @@ if __name__ == '__main__':
     
     # create logger
     logger = logging.getLogger('bob')
-    logger.setLevel(logging.getLevelName(loglevel))
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)7s: %(message)s')
 
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)7s: %(message)s')
     handler.setFormatter(formatter)
+    handler.setLevel(logging.getLevelName(loglevel))
     logger.addHandler(handler)
 
     # file logger
     fh = TimedRotatingFileHandler('logs/bob.log', when="d", interval=1, backupCount=60)
     fh.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s %(name)s[%(process)d] %(levelname)7s: %(message)s')
+    
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
