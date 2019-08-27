@@ -144,6 +144,14 @@ class BobDb:
         else:
             return False
     
+    #testx = db.discord_channel_names(message.channel.id)
+    #print(testx['serverName'], testx['channelName'])
+    def discord_channel_names(self, discord_channel_id):
+        sql = 'SELECT * FROM discord_channels WHERE channelId=(?)'
+        row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
+
+        return row[0] if len(row) > 0 else False
+
     def discord_channel_exist(self, discord_channel_id):
         sql = 'SELECT channelId FROM discord_channels WHERE channelId=(?)'
         row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()

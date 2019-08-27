@@ -154,6 +154,8 @@ async def on_message(message):
                 await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
 
     if message.content.startswith('.leaderboards'):
+        testx = db.discord_channel_names(message.channel.id)
+        print(testx['serverName'], testx['channelName'])
         logger.info(f'{message.content} by {message.author} in {ds}')
 
             # check if message author is owner, har manage server or is admin on channel
