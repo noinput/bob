@@ -1,0 +1,56 @@
+body { 
+  background-color: #343a40; 
+
+}
+h1 {
+  font-family: sans-serif;
+  font-size: 26px;
+  font: bold;
+  color: #E0FFFF;
+  margin: 0px 5px 0px;
+  padding: 2px 2px 2px;
+  border-bottom: 1px dashed #E6E8ED;
+  width: 80%;
+}
+t1 {
+  margin: 0px 0px 5px;
+}
+/* green color for score */
+t3 {
+  color: #7FFF00;
+}
+/* red color for score */
+t4 {
+  color: #FF4500;
+}
+/* stat line */
+t5 {
+        color: #E0FFFF;
+        color: #888888;
+        margin: 0px 5px 0px;
+        padding: 2px 2px 2px;
+        font: bold 9px Verdana, Arial, Helvetica, sans-serif;
+}
+#SearchInput
+{
+  font-family: sans-serif;
+  font-size: 14px;
+  width: 20%;
+  height: 30px;
+  color: #FFFFFF;
+  padding: 5px 5px 5px;
+  margin: 0px 5px 0px;
+  background-color: #343a40;
+  border-color: #FFFFFF;
+  border: 3px solid #555;
+}
+input[type=text]:hover {
+  border-color: #E6E8ED;
+}
+#rankTable a:link, a:visited {
+  color: #F0F8FF;
+}
+#rankTable {
+  padding: 0px 0px 3px;
+  font: bold 10px Verdana, Arial, Helvetica, sans-serif;
+}

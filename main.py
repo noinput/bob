@@ -205,7 +205,7 @@ async def on_message(message):
 
             await message.channel.send(embed=embed)
 
-async def main():
+async def update_players_db():
     await asyncio.sleep(10)
 
     while True:
@@ -307,6 +307,19 @@ async def main():
 
         # sleep between loops
         await asyncio.sleep(sleep_between_loops)
+
+async def discord_save_channels():
+    while True:
+        for server in bot.guilds:
+            for channel in server.channels:
+                if channel.type == discord.ChannelType.text:
+                    if db.discord_channel_exist(channel.id):
+                        db.discord_channel_update(
+                            server.id, server.name, channel.id, channel.name)
+                    else:
+                        db.discord_channel_insert(
+                            server.id, server.name, channel.id, channel.name)
+        await asyncio.sleep(1800)
 
 def emojis_replace(emoji):
 
@@ -412,7 +425,8 @@ if __name__ == '__main__':
         db = BobDb(database_file)
         owplayer = OWPlayer()
 
-        bot.loop.create_task(main())
+        bot.loop.create_task(update_players_db())
+        bot.loop.create_task(discord_save_channels())
         bot.run(cf.get('discord', 'token'))
     except KeyboardInterrupt:
         sys.exit(0)
