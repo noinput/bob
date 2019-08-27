@@ -97,7 +97,14 @@ class OWPlayer:
             return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesTied']
         except (KeyError, TypeError):
             return 0
-    
+
+    @property
+    def gamesWon(self):
+        try:
+            return self.player['competitiveStats']['careerStats']['allHeroes']['game']['gamesWon']
+        except (KeyError, TypeError):
+            return 0
+
     @property
     def timePlayed(self):
         try:
@@ -108,10 +115,6 @@ class OWPlayer:
     @property
     def _time(self):
         return int(time.time())
-
-    @property
-    def _utcnow(self):
-        return datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     @property
     def sorted_heroes(self):

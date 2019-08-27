@@ -199,6 +199,33 @@ class BobDb:
         except Exception as e:
             print(f'{e}')
             return False
+    
+    def rank_history_insert(self, battletag):
+        sql = '''
+        INSERT INTO 
+            rankHistory
+        SELECT
+            players.apiLastChecked,
+            players.battletag,
+            players.damageRank,
+            players.tankRank,
+            players.supportRank,
+            players.gamesLost,
+            players.gamesPlayed,
+            players.gamesTied,
+            players.gamesWon,
+            players.timePlayed from players
+        WHERE 
+            battletag=(?)
+            '''
+        try:
+            self.cursor.execute(sql, (battletag, ))
+            self._commit()
+            return True
+
+        except Exception as e:
+            print(f'{e}')
+            return False
 
     # default for damageRank, tankRank and supportRank has to be 1 to work with sqlite MAX 
     def get_leaderboard(self, discord_channel_id=0):
@@ -217,6 +244,7 @@ class BobDb:
             players.gamesLost,
             players.gamesPlayed,
             players.gamesTied,
+            players.gamesWon,
             players.timePlayed,
             players.private,
             players.lastGamePlayed,
@@ -238,6 +266,9 @@ class BobDb:
         INNER JOIN players ON discord_channel_players.battletag = players.battletag    
         WHERE
             discord_channel_players.channelId=(?)
+            AND (players.damageRank > 1 OR players.tankRank > 1 OR players.supportRank > 1)
+            AND players.gamesPlayed >= 5
+            AND players.lastGamePlayed >= date('now','-7 day')
         ORDER BY
             CAST(dmg AS int) DESC
         '''
@@ -254,3 +285,23 @@ class BobDb:
                     nicks.append(player['nickname'])
 
         return leaderboard
+
+
+"""
+if old_player_stats['lastGamePlayed'] != '0':
+    try:
+        then = datetime.datetime.strptime(old_player_stats['lastGamePlayed'], '%Y-%m-%d %H:%M:%S')
+        print(type(then), type(_utcnow()), old_player_stats['lastGamePlayed'])
+        duration = _utcnow() - then
+        mins, secs = divmod(int(duration.total_seconds()), 60)
+        logger.info(f'last match updated was {mins}mins {secs}seconds ago')
+    except Exception as e:
+        print(f'{e}')
+
+
+if isinstance(old_player_stats['lastGamePlayed'], datetime.datetime):
+then = old_player_stats['lastGamePlayed']
+duration = _utcnow() - then
+mins, secs = divmod(int(duration.total_seconds()), 60)
+logger.debug(f'last match updated was {mins}mins {secs}seconds ago')
+"""

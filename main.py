@@ -29,7 +29,6 @@ async def on_message(message):
         return
 
     ds = f'{str(bot.get_channel(message.channel.id)).title()} @ {str(bot.get_guild(message.guild.id))}'
-    utcnow = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     # command: boblink -> replies with bot invite link
     if message.content == 'boblink':
@@ -51,7 +50,7 @@ async def on_message(message):
                 if db.discord_admin_on_channel(message.channel.id, discord_user_id):
                     await message.channel.send(f'{discord_mention} is already an admin')
                 else:
-                    if db.discord_admin_add_to_channel(message.channel.id, discord_user_id, utcnow):
+                    if db.discord_admin_add_to_channel(message.channel.id, discord_user_id, _utcnow()):
                         await message.channel.send(f'{discord_mention} - welcome to the higher ups')
 
     # command: .srtakeadmin [@mention] (owner and guild members with manage guild permissions only)
@@ -93,7 +92,7 @@ async def on_message(message):
                 if db.player_exists(battletag):
                     logger.debug(f'{battletag} found in players db')
                 else:
-                    if db.player_insert(battletag, utcnow):
+                    if db.player_insert(battletag, _utcnow()):
                         logger.info(f'{battletag} added to players db')
 
                 # check if player is already added on discord channel
@@ -101,7 +100,7 @@ async def on_message(message):
                     logger.info(f'{battletag} already added on {ds}')
                     await message.channel.send(f'{message.author.mention} **{battletag}** already added!')
                 else:
-                    if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, utcnow):
+                    if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, _utcnow()):
                         logger.info(f'{battletag} added as {nickname} on {ds}')
                         await message.channel.send(f'{message.author.mention} **{battletag}** added as **{nickname}**')
             else:
@@ -154,8 +153,6 @@ async def on_message(message):
                 await message.channel.send(f'{message.author.mention} **{battletag}** does not exist')
 
     if message.content.startswith('.leaderboards'):
-        testx = db.discord_channel_names(message.channel.id)
-        print(testx['serverName'], testx['channelName'])
         logger.info(f'{message.content} by {message.author} in {ds}')
 
             # check if message author is owner, har manage server or is admin on channel
@@ -218,9 +215,7 @@ async def update_players_db():
         count_fail = 0
         count_404 = 0
         count_private = 0
-        count_inactive = 0
 
-        ## inactive and fail dupli count - intended or bug?
         for i, player in enumerate(players):
 
             battletag = player['battletag']
@@ -228,32 +223,18 @@ async def update_players_db():
 
             if await owplayer.get(battletag):
 
-                utcnow = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-
                 old_player_stats = db.player_get(battletag)
 
                 if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
-
-                    ## DEBUG OUTPUT - WE WILL USE THIS TO CALCULATE INACTIVITY
-                    lastGamePlayed = utcnow
-
-                    if isinstance(old_player_stats['lastGamePlayed'], datetime.datetime):
-                        then = old_player_stats['lastGamePlayed']
-                        duration = utcnow - then
-                        mins, secs = divmod(int(duration.total_seconds()), 60)
-                        logger.debug(f'last match updated was {mins}mins {secs}seconds ago')
-
-                    ## memba to move this shit when not debugging
-                    else:
-                        then = utcnow
-                        logger.info(then)
-                        logger.info(f'match played was (FIRST CHANGE ON SEEN ON PROFILE) -> saved lastGamePlayed as {lastGamePlayed} for {battletag}')
+                    lastGamePlayed = _utcnow()
                 else:
                     lastGamePlayed = old_player_stats['lastGamePlayed']
-                    count_inactive += 1
 
-                if lastGamePlayed is None:
-                    lastGamePlayed = utcnow
+                if lastGamePlayed is None or lastGamePlayed is '0':
+                    lastGamePlayed = _utcnow()
+
+                # SOK I LOGGENE FOR A SE OM DETTE ER RETT OG  VI KAN RYDDE
+                logger.debug(f'last game played type: {type(lastGamePlayed)}')
 
                 data = {
                 'damageRank':       owplayer.get_roleRank('damage'),
@@ -262,10 +243,11 @@ async def update_players_db():
                 'gamesLost':        owplayer.gamesLost,
                 'gamesPlayed':      owplayer.gamesPlayed,
                 'gamesTied':        owplayer.gamesTied,
+                'gamesWon':         owplayer.gamesWon,
                 'timePlayed':       owplayer.timePlayed,
                 'private':          owplayer.private,
                 'lastGamePlayed':   lastGamePlayed,
-                'apiLastChecked':   utcnow,
+                'apiLastChecked':   _utcnow(),
                 'apiLastStatus':    owplayer.http_last_status,
                 }
                 
@@ -285,6 +267,9 @@ async def update_players_db():
                 logger.debug(f'{battletag} data: {data}')
 
                 if db.player_update(battletag, data):
+                    if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
+                        if db.rank_history_insert(battletag):
+                            logger.debug(f'saved rankHistory for {battletag}')
                     status = 'OK'
                     count_ok += 1
 
@@ -300,7 +285,7 @@ async def update_players_db():
                 status = '404 (not found)'
                 count_404 += 1
 
-            out = f'{battletag:<30} {status:<15} [{i}/{count_total} ok:{count_ok} inactive:{count_inactive} fail:{count_fail} private:{count_private} 404:{count_404}]'
+            out = f'{battletag:<30} {status:<15} [{i}/{count_total} ok:{count_ok} fail:{count_fail} private:{count_private} 404:{count_404}]'
 
             if status == 'FAIL':
                 logger.critical(out)
@@ -322,6 +307,10 @@ async def discord_save_channels():
                         db.discord_channel_insert(
                             server.id, server.name, channel.id, channel.name)
         await asyncio.sleep(1800)
+
+def _utcnow():
+    t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
 
 def emojis_replace(emoji):
 

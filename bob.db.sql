@@ -1,26 +1,16 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "discord_channels" (
-	"serverId"	TEXT,
-	"serverName"	TEXT,
-	"channelId"	TEXT UNIQUE,
-	"channelName"	TEXT,
-	"short"	TEXT
-);
-CREATE TABLE IF NOT EXISTS "statsHistory" (
+CREATE TABLE IF NOT EXISTS "rankHistory" (
 	"dateUtc"	TEXT,
-	"battletag "	TEXT,
-	"damageHeroes"	TEXT,
+	"battletag"	TEXT,
 	"damageRank"	INTEGER,
-	"tankHeroes"	TEXT,
 	"tankRank"	INTEGER,
-	"supportHeroes"	TEXT,
 	"supportRank"	INTEGER,
 	"gamesLost"	INTEGER,
 	"gamesPlayed"	INTEGER,
 	"gamesTied"	INTEGER,
 	"gamesWon"	INTEGER,
 	"timePlayed"	TEXT,
-	FOREIGN KEY("battletag ") REFERENCES "players"("battletag") ON DELETE CASCADE
+	FOREIGN KEY("battletag") REFERENCES "players"("battletag") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "players" (
 	"battletag"	TEXT UNIQUE,
@@ -33,12 +23,20 @@ CREATE TABLE IF NOT EXISTS "players" (
 	"gamesLost"	INTEGER DEFAULT 0,
 	"gamesPlayed"	INTEGER DEFAULT 0,
 	"gamesTied"	INTEGER DEFAULT 0,
+	"gamesWon"	INTEGER DEFAULT 0,
 	"timePlayed"	TEXT,
 	"private"	TEXT,
 	"lastGamePlayed"	TEXT,
 	"apiLastChecked"	TEXT,
 	"apiLastStatus"	TEXT,
 	"addedDateUtc"	TEXT
+);
+CREATE TABLE IF NOT EXISTS "discord_channels" (
+	"serverId"	TEXT,
+	"serverName"	TEXT,
+	"channelId"	TEXT UNIQUE,
+	"channelName"	TEXT,
+	"short"	TEXT
 );
 CREATE TABLE IF NOT EXISTS "discord_channel_admins" (
 	"channelId"	INTEGER,
