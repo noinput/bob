@@ -1,5 +1,8 @@
 import sqlite3
 
+from resources.bobhelper import BobHelper
+
+
 class BobDb:
 
     def __init__(self, db):
@@ -68,7 +71,7 @@ class BobDb:
 
     def discord_player_add_to_channel(self, discord_channel_id, battletag, nickname, discord_user_id, added_date_utc):
         sql = '''
-        INSERT INTO discord_channel_players (
+        INSERT INTO discordChannelPlayers (
         channelId,
         battletag,
         nickname,
@@ -92,20 +95,20 @@ class BobDb:
             return False
 
     def discord_player_delete_from_channel(self, battletag, discord_channel_id):
-        sql = 'DELETE FROM discord_channel_players WHERE battletag=(?) AND channelId=(?)'
+        sql = 'DELETE FROM discordChannelPlayers WHERE battletag=(?) AND channelId=(?)'
         self.cursor.execute(sql, (battletag, discord_channel_id))
         self._commit()
         return True
     
     def discord_player_is_on_channel(self, battletag, discord_channel_id):
-        sql = 'SELECT battletag FROM discord_channel_players WHERE battletag=(?) AND channelId=(?)'
+        sql = 'SELECT battletag FROM discordChannelPlayers WHERE battletag=(?) AND channelId=(?)'
         row = self.cursor.execute(sql, (battletag, discord_channel_id)).fetchall()
 
         return True if len(row) > 0 else False
     
     def discord_admin_add_to_channel(self, discord_channel_id, discord_user_id, added_date_utc):
         sql = '''
-        INSERT INTO discord_channel_admins (
+        INSERT INTO discordChannelAdmins (
         channelId,
         discordUser,
         addedDateUtc)
@@ -124,19 +127,19 @@ class BobDb:
             return False
     
     def discord_admin_delete_from_channel(self, discord_channel_id, discord_user_id):
-        sql = 'DELETE FROM discord_channel_admins WHERE channelId=(?) AND discordUser=(?)'
+        sql = 'DELETE FROM discordChannelAdmins WHERE channelId=(?) AND discordUser=(?)'
         self.cursor.execute(sql, (discord_channel_id, discord_user_id))
         self._commit()
         return True
     
     def discord_admin_on_channel(self, discord_channel_id, discord_user_id):
-        sql = 'SELECT discordUser FROM discord_channel_admins WHERE channelId=(?) AND discordUser=(?)'
+        sql = 'SELECT discordUser FROM discordChannelAdmins WHERE channelId=(?) AND discordUser=(?)'
         row = self.cursor.execute(sql, (discord_channel_id, discord_user_id)).fetchall()
 
         return True if len(row) > 0 else False
 
     def discord_user_is_allowed_delete(self, battletag, discord_user_id):
-        sql = 'SELECT battletag FROM discord_channel_players WHERE battletag=(?) AND addedByDiscordUser=(?)'
+        sql = 'SELECT battletag FROM discordChannelPlayers WHERE battletag=(?) AND addedByDiscordUser=(?)'
         row = self.cursor.execute(sql, (battletag, discord_user_id)).fetchall()
 
         if len(row) > 0:
@@ -147,20 +150,20 @@ class BobDb:
     #testx = db.discord_channel_names(message.channel.id)
     #print(testx['serverName'], testx['channelName'])
     def discord_channel_names(self, discord_channel_id):
-        sql = 'SELECT * FROM discord_channels WHERE channelId=(?)'
+        sql = 'SELECT * FROM discordChannels WHERE channelId=(?)'
         row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
 
         return row[0] if len(row) > 0 else False
 
     def discord_channel_exist(self, discord_channel_id):
-        sql = 'SELECT channelId FROM discord_channels WHERE channelId=(?)'
+        sql = 'SELECT channelId FROM discordChannels WHERE channelId=(?)'
         row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
 
         return True if len(row) > 0 else False
 
     def discord_channel_insert(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name):
         sql = '''
-        INSERT INTO discord_channels (
+        INSERT INTO discordChannels (
             serverId,
             serverName,
             channelId,
@@ -182,7 +185,7 @@ class BobDb:
     
     def discord_channel_update(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name):
         sql = '''
-        UPDATE discord_channels SET
+        UPDATE discordChannels SET
             serverId=(?),
             serverName=(?),
             channelId=(?),
@@ -226,14 +229,38 @@ class BobDb:
         except Exception as e:
             print(f'{e}')
             return False
+    
+    def rank_history_get_last(self, battletag, role):
+        sql = '''
+        SELECT *
+        FROM
+            rankHistory
+        WHERE
+            battletag=(?)
+            AND (rankHistory.damageRank > 1 OR rankHistory.tankRank > 1 OR rankHistory.supportRank > 1)
+            AND rankHistory.gamesPlayed >= 5
+            AND rankHistory.dateUtc >= date('now', '-1 day')
+            AND rankHistory.dateUtc < date('now')
+        ORDER BY dateUtc
+        DESC
+        LIMIT 1
+            '''
+        
+        row = self.cursor.execute(sql, (battletag, )).fetchall()
+
+        if len(row) > 0:
+            for r in row:
+                return r[role]
+
+        return 0
 
     # default for damageRank, tankRank and supportRank has to be 1 to work with sqlite MAX 
     def get_leaderboard(self, discord_channel_id=0):
         sql = '''
         SELECT
-            discord_channel_players.battletag,
-            discord_channel_players.nickname,
-            discord_channel_players.channelId,
+            discordChannelPlayers.battletag,
+            discordChannelPlayers.nickname,
+            discordChannelPlayers.channelId,
 
             players.damageHeroes,
             players.damageRank,
@@ -252,56 +279,40 @@ class BobDb:
             players.apiLastStatus,
             players.addedDateUtc,
 
-            MAX(players.damageRank, players.tankRank, players.supportRank) as dmg,
+            MAX(players.damageRank, players.tankRank, players.supportRank) as maxRank,
             
             CASE
-                WHEN players.damageRank > players.tankRank AND players.damageRank > players.supportRank THEN 'damage'
-                WHEN players.tankRank > players.damageRank AND players.tankRank > players.supportRank THEN 'tank'
-                WHEN players.supportRank > players.damageRank AND players.supportRank > players.tankRank THEN 'support'
+                WHEN players.damageRank > players.tankRank AND players.damageRank > players.supportRank 
+                        THEN 'damage'
+                WHEN players.tankRank > players.damageRank AND players.tankRank > players.supportRank
+                        THEN 'tank'
+                WHEN players.supportRank > players.damageRank AND players.supportRank > players.tankRank
+                        THEN 'support'
                 ELSE False
-            END AS dmgType
+            END AS maxRole
         
         FROM
-            discord_channel_players
-        INNER JOIN players ON discord_channel_players.battletag = players.battletag    
+            discordChannelPlayers
+        INNER JOIN players ON discordChannelPlayers.battletag = players.battletag    
         WHERE
-            discord_channel_players.channelId=(?)
+            discordChannelPlayers.channelId=(?)
             AND (players.damageRank > 1 OR players.tankRank > 1 OR players.supportRank > 1)
             AND players.gamesPlayed >= 5
             AND players.lastGamePlayed >= date('now','-7 day')
         ORDER BY
-            CAST(dmg AS int) DESC
+            CAST(maxRank AS int) DESC
         '''
 
         row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
-
         nicks = []
         leaderboard = []
+        bobhelper = BobHelper()
 
         if len(row) > 0:
             for player in row:
                 if player['nickname'] not in nicks:
+                    bobhelper.human_duration_since(player['lastGamePlayed'])
                     leaderboard.append(player)
                     nicks.append(player['nickname'])
 
         return leaderboard
-
-
-"""
-if old_player_stats['lastGamePlayed'] != '0':
-    try:
-        then = datetime.datetime.strptime(old_player_stats['lastGamePlayed'], '%Y-%m-%d %H:%M:%S')
-        print(type(then), type(_utcnow()), old_player_stats['lastGamePlayed'])
-        duration = _utcnow() - then
-        mins, secs = divmod(int(duration.total_seconds()), 60)
-        logger.info(f'last match updated was {mins}mins {secs}seconds ago')
-    except Exception as e:
-        print(f'{e}')
-
-
-if isinstance(old_player_stats['lastGamePlayed'], datetime.datetime):
-then = old_player_stats['lastGamePlayed']
-duration = _utcnow() - then
-mins, secs = divmod(int(duration.total_seconds()), 60)
-logger.debug(f'last match updated was {mins}mins {secs}seconds ago')
-"""

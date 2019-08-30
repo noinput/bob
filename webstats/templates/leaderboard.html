@@ -24,11 +24,11 @@
           <th style="width: 2%" scope="col"><t1>#</t1></th>
           <th style="width: 10%" scope="col"><t1>NICKNAME</t1></th>
           <th style="width: 10%" scope="col"><t1>BATTLETAG</t1></th>
-          <th style="width: 13%" scope="col"><t1>DAMAGE RANK</t1></th>
-          <th style="width: 5%" scope="col"><t1>TANK RANK</t1></th>
-          <th style="width: 5%" scope="col"><t1>SUPPORT RANK</t1></th>
-          <th style="width: 5%" scope="col"><t1>GAMES PLAYED</t1></th>
-          <th style="width: 5%" scope="col"><t1>LASY PLAYED</t1></th>
+          <th style="width: 5%" scope="col"><t1>RANK</t1></th>
+          <th style="width: 5%" scope="col"><t1>ROLE</t1></th>
+          <th style="width: 15%" scope="col"><t1>HEROES</t1></th>
+          <th style="width: 8%" scope="col"><t1>GAMES PLAYED</t1></th>
+          <th style="width: 10%" scope="col"><t1>LASY PLAYED</t1></th>
         </tr>
       </thead>
       <tbody>
@@ -37,9 +37,9 @@
             <th scope="row">{{loop.index}}</th>
           <td><t1>{{player['nickname']}}</td>
           <td><a target="_blank" href="http://www.overbuff.com/players/pc/{{player['battletag']}}?mode=competitive">{{player['battletag']}}</a></td>
-          <td>{{player['damageRank']}}</td>
-          <td>{{player['tankRank']}}</td>
-          <td>{{player['supportRank']}}</td>
+          <td>{{player['maxRank']}}</td>
+          <td>{{player['maxRole']}}</td>
+          <td>{{player['maxRole']}}</td>
           <td>{{player['gamesPlayed']}}</td>
           <td>{{player['lastGamePlayed']}}</td>
           </tr>

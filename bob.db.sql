@@ -31,18 +31,18 @@ CREATE TABLE IF NOT EXISTS "players" (
 	"apiLastStatus"	TEXT,
 	"addedDateUtc"	TEXT
 );
-CREATE TABLE IF NOT EXISTS "discord_channels" (
+CREATE TABLE IF NOT EXISTS "discordChannels" (
 	"serverId"	TEXT,
 	"serverName"	TEXT,
 	"channelId"	TEXT UNIQUE,
 	"channelName"	TEXT,
 	"short"	TEXT
 );
-CREATE TABLE IF NOT EXISTS "discord_channel_admins" (
+CREATE TABLE IF NOT EXISTS "discordChannelAdmins" (
 	"channelId"	INTEGER,
 	"discordUser"	INTEGER,
 	"addedDateUtc"	TEXT,
-	FOREIGN KEY("channelId") REFERENCES "discord_channel_players"("channelId") ON DELETE CASCADE
+	FOREIGN KEY("channelId") REFERENCES "discordChannelPlayers"("channelId") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "botActions" (
 	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS "seasons" (
 	"startDateUtc"	TEXT,
 	"endDateUtc"	TEXT
 );
-CREATE TABLE IF NOT EXISTS "discord_channel_players" (
+CREATE TABLE IF NOT EXISTS "discordChannelPlayers" (
 	"channelId"	INTEGER,
 	"battletag"	TEXT,
 	"nickname"	TEXT,

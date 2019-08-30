@@ -9,11 +9,11 @@ import os
 import pathlib
 import sys
 import time
-import re
 
 from logging.handlers import TimedRotatingFileHandler
 
 from resources.bobdb import BobDb
+from resources.bobhelper import BobHelper
 from resources.owplayer import OWPlayer
 
 
@@ -162,8 +162,12 @@ async def on_message(message):
 
             cid = message.content.split(' ')[1] if len(message.content.split(' ')) == 2 else message.channel.id
 
+            discord_names = db.discord_channel_names(cid)
+            server_name = discord_names['serverName']
+            channel_name = discord_names['channelName']
+
             embed=discord.Embed(
-                title=f':trophy: Leaderboards for {ds} :trophy:',
+                title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
                 description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
 
             leaderboard = db.get_leaderboard(cid)
@@ -175,27 +179,35 @@ async def on_message(message):
                     break
 
                 # set custom emjois for roles in leaderboard [print(l) for l in message.guild.emojis]
-                role_emoji = emojis_replace(str(player['dmgType']))
+                role_emoji = bobhelper.emojis_replace(player['maxRole'])
                 hero_emoji = ''
+                last_rank = ''
 
                 # try to get the most played hero for a role and replace it with a hero emoji
                 try:
-                    if player['dmgType'] == 'damage':
-                        hero_emoji = emojis_replace(player['damageHeroes'].split(' ')[0])
+                    if player['maxRole'] == 'damage':
+                        hero_emoji = bobhelper.emojis_replace(player['damageHeroes'].split(' ')[0])
+                        last_rank = db.rank_history_get_last(player['battletag'], 'damageRank')
 
-                    if player['dmgType'] == 'tank':
-                        hero_emoji = emojis_replace(player['tankHeroes'].split(' ')[0])
+                    if player['maxRole'] == 'tank':
+                        hero_emoji = bobhelper.emojis_replace(player['tankHeroes'].split(' ')[0])
+                        last_rank = db.rank_history_get_last(player['battletag'], 'tankRank')
 
-                    if player['dmgType'] == 'support':
-                        hero_emoji = emojis_replace(player['supportHeroes'].split(' ')[0])
-                    #print(hero_emoji)
-                except:
-                    pass
+                    if player['maxRole'] == 'support':
+                        hero_emoji = bobhelper.emojis_replace(player['supportHeroes'].split(' ')[0])
+                        last_rank = db.rank_history_get_last(player['battletag'], 'supportRank')
 
-                entry = f"\n{i+1}. {hero_emoji} **{player['nickname']}** ({player['battletag']}){role_emoji}**{player['dmg']}**"
+                    diff_rank = player['maxRank'] - last_rank
+                    diff_rank = f'+{diff_rank}' if diff_rank > 0 else diff_rank
+                except Exception as e:
+                    print(e)
+
+                battletag_short = player['battletag'].split('-')[:-1]
+                entry = f"\n{i+1}. {hero_emoji} **{player['nickname']}** ({' '.join(battletag_short)}){role_emoji}**{player['maxRank']}** ({diff_rank})"
                 embed_rank_table += entry
+                print(len(embed_rank_table))
 
-                if i % 10 == 0 and i > 5:
+                if i % 10 == 0 and i >= 5:
                     embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
                     embed_rank_table = ''
 
@@ -234,7 +246,7 @@ async def update_players_db():
                     lastGamePlayed = _utcnow()
 
                 # SOK I LOGGENE FOR A SE OM DETTE ER RETT OG  VI KAN RYDDE
-                logger.debug(f'last game played type: {type(lastGamePlayed)}')
+                logger.debug(f"last game played type: {type(lastGamePlayed)} - {battletag} - {owplayer.gamesPlayed} - {old_player_stats['lastGamePlayed']}")
 
                 data = {
                 'damageRank':       owplayer.get_roleRank('damage'),
@@ -250,7 +262,7 @@ async def update_players_db():
                 'apiLastChecked':   _utcnow(),
                 'apiLastStatus':    owplayer.http_last_status,
                 }
-                
+
                 # get sorted hero list (by time played)
                 sorted_heroes = owplayer.sorted_heroes
                 if sorted_heroes is not False:
@@ -268,8 +280,8 @@ async def update_players_db():
 
                 if db.player_update(battletag, data):
                     if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
-                        if db.rank_history_insert(battletag):
-                            logger.debug(f'saved rankHistory for {battletag}')
+                            if db.rank_history_insert(battletag):
+                                logger.debug(f'saved rankHistory for {battletag}')
                     status = 'OK'
                     count_ok += 1
 
@@ -290,7 +302,7 @@ async def update_players_db():
             if status == 'FAIL':
                 logger.critical(out)
             else:
-                logger.info(out)
+                logger.debug(out)
 
         # sleep between loops
         await asyncio.sleep(sleep_between_loops)
@@ -312,51 +324,6 @@ def _utcnow():
     t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
     return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
 
-def emojis_replace(emoji):
-
-    replace_map = {
-        'damage': '<:owdamage:614835972210688000>',
-        'support': '<:owsupport:614835972215144457>',
-        'tank': '<:owtank:614835972315807754>',
-
-        '^ashe$':       '<:owashe:614947399181271051>',
-        'bastion':      '<:owbastion:614947399357562908>',
-        'doomfist':     '<:owdoomfist:614947399055573008>',
-        'genji':        '<:owgenji:614947399500300316>',
-        'hanzo':        '<:hanzo:614947398900383745>',
-        'junkrat':      '<:owjunkrat:614947399257030686>',
-        'mccree':       '<:owmccree:614947399357431809>',
-        'mei':          '<:owmei:614947399110230037>',
-        'pharah':       '<:owpharah:614947399701626924>',
-        'reaper':       '<:owreaper:614947399361757229>',
-        'soldier76':    '<:owsoldier76:614947399303168025>',
-        'sombra':       '<:owsombra:614947399273807872>',
-        'symmetra':     '<:owsymmetra:614947399021887504>',
-        'torbjorn':     '<:owtorbjorn:614947399781056532>',
-        'tracer':       '<:owtracer:614947399017955341>',
-        'widowmaker':   '<:owwidowmaker:614947399412088833>',
-
-        'dVa':          '<:owdVa:614947399194116106>',
-        'orisa':        '<:oworisa:614947399839776770>',
-        'reinhardt':    '<:owreinhardt:614947399462551570>',
-        'roadhog':      '<:owroadhog:614947399349305345>',
-        'sigma':        '<:owsigma:614947399286128640>',
-        'winston':      '<:owwinston:614947399265157124>',
-        'wreckingBall': '<:owwreckingBall:614947399189921820>',
-        'zarya':        '<:owzarya:614947399315488769>',
-
-        'ana':          '<:owana:614947399130939392>',
-        'baptiste':     '<:owbaptiste:614947398921486338>',
-        'brigitte':     '<:owbrigitte:614947399806353427>',
-        'lucio':        '<:owlucio:614947399042859035>',
-        'mercy':        '<:owmercy:614947399265419284>',
-        'moira':        '<:owmoira:614947399323877377>',
-        'zenyatta':     '<:owzenyatta:614947399361757218>'}
-
-    for k, v in replace_map.items():
-        emoji = re.sub(k, v, emoji)
-
-    return emoji
 
 if __name__ == '__main__':
 
@@ -413,6 +380,7 @@ if __name__ == '__main__':
     logger.info(f'discord owner: {discord_owner_id}')
     
     try:
+        bobhelper = BobHelper()
         db = BobDb(database_file)
         owplayer = OWPlayer()
 

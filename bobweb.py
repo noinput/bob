@@ -25,7 +25,7 @@ def robots():
 
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(os.path.join(app.root_path, 'webstats/static'),
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
 @app.route("/profile/<battletag>")
@@ -45,17 +45,21 @@ def leaderboards(discord_channel_id):
         #if discord_channel:
             #average_sr, num_players, sqldata = get_sql(discord_channel['channel_id'])
         players = db.get_leaderboard(discord_channel_id)
-        return render_template('leaderboard.html',
-            players=players)
+        discord_names = db.discord_channel_names(discord_channel_id)
+        
+        return render_template(
+            'leaderboard.html',
+            players=players,
+            server_name=discord_names['serverName'],
+            channel_name=discord_names['channelName'])
+
         """
             average_sr=average_sr,
             num_players=num_players,
             sqldata=sqldata,
-            server_name=discord_channel['server_name'],
-            channel_name=discord_channel['channel_name'])"""
         #else:
             #return 'theres nothing here...'
-
+"""
     except Exception as e:
         print(e)
 
