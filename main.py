@@ -1,7 +1,6 @@
 import asyncio
 import argparse
 import configparser
-import datetime
 import discord
 import json
 import logging
@@ -50,7 +49,7 @@ async def on_message(message):
                 if db.discord_admin_on_channel(message.channel.id, discord_user_id):
                     await message.channel.send(f'{discord_mention} is already an admin')
                 else:
-                    if db.discord_admin_add_to_channel(message.channel.id, discord_user_id, _utcnow()):
+                    if db.discord_admin_add_to_channel(message.channel.id, discord_user_id, bobhelper.utcnow()):
                         await message.channel.send(f'{discord_mention} - welcome to the higher ups')
 
     # command: .srtakeadmin [@mention] (owner and guild members with manage guild permissions only)
@@ -92,7 +91,7 @@ async def on_message(message):
                 if db.player_exists(battletag):
                     logger.debug(f'{battletag} found in players db')
                 else:
-                    if db.player_insert(battletag, _utcnow()):
+                    if db.player_insert(battletag, bobhelper.utcnow()):
                         logger.info(f'{battletag} added to players db')
 
                 # check if player is already added on discord channel
@@ -100,7 +99,7 @@ async def on_message(message):
                     logger.info(f'{battletag} already added on {ds}')
                     await message.channel.send(f'{message.author.mention} **{battletag}** already added!')
                 else:
-                    if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, _utcnow()):
+                    if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, bobhelper.utcnow()):
                         logger.info(f'{battletag} added as {nickname} on {ds}')
                         await message.channel.send(f'{message.author.mention} **{battletag}** added as **{nickname}**')
             else:
@@ -162,59 +161,67 @@ async def on_message(message):
 
             cid = message.content.split(' ')[1] if len(message.content.split(' ')) == 2 else message.channel.id
 
-            discord_names = db.discord_channel_names(cid)
-            server_name = discord_names['serverName']
-            channel_name = discord_names['channelName']
+            discord_embed = build_discord_leaderboard_embed(cid)
+            if discord_embed is not False:
+                await message.channel.send(embed=discord_embed)
 
-            embed=discord.Embed(
-                title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
-                description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
+def build_discord_leaderboard_embed(discord_channel_id):
+    discord_names = db.discord_channel_names(discord_channel_id)
+    server_name = discord_names['serverName']
+    channel_name = discord_names['channelName']
 
-            leaderboard = db.get_leaderboard(cid)
+    embed=discord.Embed(
+        title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
+        description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
 
+    leaderboard = db.get_leaderboard(discord_channel_id)
+
+    embed_rank_table = ''
+
+    for i, player in enumerate(leaderboard):
+        if i >= 10:
+            break
+
+        # set custom emjois for roles in leaderboard [print(l) for l in message.guild.emojis]
+        role_emoji = bobhelper.emojis_replace(player['maxRole'])
+        hero_emoji = ''
+        last_rank = False
+
+        # try to get the most played hero for a role and replace it with a hero emoji
+        try:
+            if player['maxRole'] == 'damage':
+                hero_emoji = bobhelper.emojis_replace(player['damageHeroes'].split(' ')[0])
+                last_rank = db.rank_history_get_last(player['battletag'], 'damageRank')
+
+            if player['maxRole'] == 'tank':
+                hero_emoji = bobhelper.emojis_replace(player['tankHeroes'].split(' ')[0])
+                last_rank = db.rank_history_get_last(player['battletag'], 'tankRank')
+
+            if player['maxRole'] == 'support':
+                hero_emoji = bobhelper.emojis_replace(player['supportHeroes'].split(' ')[0])
+                last_rank = db.rank_history_get_last(player['battletag'], 'supportRank')
+
+        except Exception as e:
+            print(e)
+
+        battletag_short = player['battletag'].split('-')[:-1]
+        entry = f"\n{i+1}. {hero_emoji} **{player['nickname']}** ({' '.join(battletag_short)}){role_emoji}**{player['maxRank']}**"
+        
+        if last_rank is not False:
+            diff_rank = player['maxRank'] - last_rank
+            entry +=  f' (+{diff_rank})' if diff_rank > 0 else f' ({diff_rank})'
+
+        embed_rank_table += entry
+        print(len(embed_rank_table))
+
+        if i % 10 == 0 and i >= 5:
+            embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
             embed_rank_table = ''
 
-            for i, player in enumerate(leaderboard):
-                if i >= 10:
-                    break
+    if len(embed_rank_table) > 0:
+        embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
 
-                # set custom emjois for roles in leaderboard [print(l) for l in message.guild.emojis]
-                role_emoji = bobhelper.emojis_replace(player['maxRole'])
-                hero_emoji = ''
-                last_rank = ''
-
-                # try to get the most played hero for a role and replace it with a hero emoji
-                try:
-                    if player['maxRole'] == 'damage':
-                        hero_emoji = bobhelper.emojis_replace(player['damageHeroes'].split(' ')[0])
-                        last_rank = db.rank_history_get_last(player['battletag'], 'damageRank')
-
-                    if player['maxRole'] == 'tank':
-                        hero_emoji = bobhelper.emojis_replace(player['tankHeroes'].split(' ')[0])
-                        last_rank = db.rank_history_get_last(player['battletag'], 'tankRank')
-
-                    if player['maxRole'] == 'support':
-                        hero_emoji = bobhelper.emojis_replace(player['supportHeroes'].split(' ')[0])
-                        last_rank = db.rank_history_get_last(player['battletag'], 'supportRank')
-
-                    diff_rank = player['maxRank'] - last_rank
-                    diff_rank = f'+{diff_rank}' if diff_rank > 0 else diff_rank
-                except Exception as e:
-                    print(e)
-
-                battletag_short = player['battletag'].split('-')[:-1]
-                entry = f"\n{i+1}. {hero_emoji} **{player['nickname']}** ({' '.join(battletag_short)}){role_emoji}**{player['maxRank']}** ({diff_rank})"
-                embed_rank_table += entry
-                print(len(embed_rank_table))
-
-                if i % 10 == 0 and i >= 5:
-                    embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
-                    embed_rank_table = ''
-
-            if len(embed_rank_table) > 0:
-                embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
-
-            await message.channel.send(embed=embed)
+    return embed if i >= 4 else False
 
 async def update_players_db():
     await asyncio.sleep(10)
@@ -238,12 +245,12 @@ async def update_players_db():
                 old_player_stats = db.player_get(battletag)
 
                 if owplayer.gamesPlayed != old_player_stats['gamesPlayed']:
-                    lastGamePlayed = _utcnow()
+                    lastGamePlayed = bobhelper.utcnow()
                 else:
                     lastGamePlayed = old_player_stats['lastGamePlayed']
 
                 if lastGamePlayed is None or lastGamePlayed is '0':
-                    lastGamePlayed = _utcnow()
+                    lastGamePlayed = bobhelper.utcnow()
 
                 # SOK I LOGGENE FOR A SE OM DETTE ER RETT OG  VI KAN RYDDE
                 logger.debug(f"last game played type: {type(lastGamePlayed)} - {battletag} - {owplayer.gamesPlayed} - {old_player_stats['lastGamePlayed']}")
@@ -259,7 +266,7 @@ async def update_players_db():
                 'timePlayed':       owplayer.timePlayed,
                 'private':          owplayer.private,
                 'lastGamePlayed':   lastGamePlayed,
-                'apiLastChecked':   _utcnow(),
+                'apiLastChecked':   bobhelper.utcnow(),
                 'apiLastStatus':    owplayer.http_last_status,
                 }
 
@@ -320,10 +327,23 @@ async def discord_save_channels():
                             server.id, server.name, channel.id, channel.name)
         await asyncio.sleep(1800)
 
-def _utcnow():
-    t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
+async def post_daily_leaderboards():
+    now = bobhelper.utcnow()
+    current = 8
 
+    while True:
+        now = bobhelper.utcnow()
+        if now.hour >= 1:
+            if now.day != current:
+                discord_channel_ids = db.discord_get_channel_ids_for_leaderboards()
+                for cid in discord_channel_ids:
+                    print(cid['channelId'])
+                logger.info('seems we have a new day on our hands! Value changed from {} to {} - Running: setdailysr(), spamTopList()'.format(current, now.day))
+                #await spamTopList()
+                #await bot.send_message(discord.Object(id=cid), msg)
+                current = now.day
+
+        await asyncio.sleep(10)
 
 if __name__ == '__main__':
 
@@ -386,6 +406,7 @@ if __name__ == '__main__':
 
         bot.loop.create_task(update_players_db())
         bot.loop.create_task(discord_save_channels())
+        bot.loop.create_task(post_daily_leaderboards())
         bot.run(cf.get('discord', 'token'))
     except KeyboardInterrupt:
         sys.exit(0)

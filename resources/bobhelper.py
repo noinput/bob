@@ -86,7 +86,7 @@ class BobHelper:
 
         return emoji
     
-    def _utcnow(self, ):
+    def utcnow(self, ):
         t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
 
@@ -94,8 +94,8 @@ class BobHelper:
     def human_duration_since(self, then):
         try: 
             then = datetime.datetime.strptime(then, '%Y-%m-%d %H:%M:%S')
-            #print(type(then), type(self._utcnow()))
-            duration = self._utcnow() - then
+            #print(type(then), type(self.utcnow()))
+            duration = self.utcnow() - then
             secs = int(duration.total_seconds())
             human_duration = f'{secs}seconds'
             if duration.total_seconds() > 60:

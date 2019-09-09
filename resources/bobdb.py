@@ -203,6 +203,12 @@ class BobDb:
             print(f'{e}')
             return False
     
+    def discord_get_channel_ids_for_leaderboards(self):
+        sql = 'SELECT DISTINCT channelId FROM discordChannelPlayers'
+        row = self.cursor.execute(sql).fetchall()
+
+        return row if len(row) > 0 else False
+
     def rank_history_insert(self, battletag):
         sql = '''
         INSERT INTO 
@@ -252,7 +258,7 @@ class BobDb:
             for r in row:
                 return r[role]
 
-        return 0
+        return False
 
     # default for damageRank, tankRank and supportRank has to be 1 to work with sqlite MAX 
     def get_leaderboard(self, discord_channel_id=0):
