@@ -113,7 +113,7 @@ class BobHelper:
                 days, hours = divmod(hours, 24)
                 human_duration = f'{days}days {hours}hours'
             
-            print(f'last match updated was {human_duration} ago')
+            #print(f'last match updated was {human_duration} ago')
         except Exception as e:
             print(f'{e}')
             print(f'last match updated was NA ago')

@@ -166,7 +166,11 @@ async def on_message(message):
                 await message.channel.send(embed=discord_embed)
 
 def build_discord_leaderboard_embed(discord_channel_id):
+    leaderboard = db.get_leaderboard(discord_channel_id)
     discord_names = db.discord_channel_names(discord_channel_id)
+    if len(leaderboard) == 0 or not discord_names:
+        return False
+
     server_name = discord_names['serverName']
     channel_name = discord_names['channelName']
 
@@ -174,10 +178,8 @@ def build_discord_leaderboard_embed(discord_channel_id):
         title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
         description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
 
-    leaderboard = db.get_leaderboard(discord_channel_id)
-
     embed_rank_table = ''
-
+    i = 0
     for i, player in enumerate(leaderboard):
         if i >= 10:
             break
@@ -212,7 +214,6 @@ def build_discord_leaderboard_embed(discord_channel_id):
             entry +=  f' (+{diff_rank})' if diff_rank > 0 else f' ({diff_rank})'
 
         embed_rank_table += entry
-        print(len(embed_rank_table))
 
         if i % 10 == 0 and i >= 5:
             embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
@@ -320,27 +321,34 @@ async def discord_save_channels():
             for channel in server.channels:
                 if channel.type == discord.ChannelType.text:
                     if db.discord_channel_exist(channel.id):
-                        db.discord_channel_update(
-                            server.id, server.name, channel.id, channel.name)
+                        db.discord_channel_update(server.id, server.name, channel.id, channel.name)
                     else:
-                        db.discord_channel_insert(
-                            server.id, server.name, channel.id, channel.name)
+                        db.discord_channel_insert(server.id, server.name, channel.id, channel.name)
         await asyncio.sleep(1800)
 
 async def post_daily_leaderboards():
-    now = bobhelper.utcnow()
-    current = 8
+    await asyncio.sleep(10)
+    
+    current = bobhelper.utcnow().day
 
     while True:
         now = bobhelper.utcnow()
-        if now.hour >= 1:
+        if now.hour >= 8:
+            
             if now.day != current:
+                logger.info(f'seems we have a new day on our hands! day changed from {current} to {now.day}')
                 discord_channel_ids = db.discord_get_channel_ids_for_leaderboards()
+                
                 for cid in discord_channel_ids:
-                    print(cid['channelId'])
-                logger.info('seems we have a new day on our hands! Value changed from {} to {} - Running: setdailysr(), spamTopList()'.format(current, now.day))
-                #await spamTopList()
-                #await bot.send_message(discord.Object(id=cid), msg)
+                    discord_embed = build_discord_leaderboard_embed(cid['channelId'])
+                    
+                    if discord_embed is not False:
+                        channel = bot.get_channel(cid['channelId'])
+                        
+                        if channel is not None:
+                            message = '**A NEW DAY!** Leaderboards are posted at 10am UTC!'
+                            await channel.send(message, embed=discord_embed)
+                
                 current = now.day
 
         await asyncio.sleep(10)
