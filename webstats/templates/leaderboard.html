@@ -13,35 +13,65 @@
   <body>
     <br>
     <h1></h1><h1>Leaderboard for {{channel_name}} ({{server_name}})</h1>
-    <t5>Average Skill Rating is {{average_sr}} across {{num_players}} players</t5>
+    <!-- <t5>Average Skill Rating is {{average_sr}} across {{num_players}} players</t5> -->
     <br><br>
     <input type="text" id="SearchInput" onkeyup="searchTable()" placeholder="Search...">
     <br><br>
 
     <table id="rankTable" style="width: 80%" border='0' cellspaing='0' align='left' class="table table-sm table-hover table-dark">
       <thead>
-        <tr>
+        <tr">
           <th style="width: 2%" scope="col"><t1>#</t1></th>
           <th style="width: 10%" scope="col"><t1>NICKNAME</t1></th>
           <th style="width: 10%" scope="col"><t1>BATTLETAG</t1></th>
           <th style="width: 5%" scope="col"><t1>RANK</t1></th>
-          <th style="width: 5%" scope="col"><t1>ROLE</t1></th>
           <th style="width: 15%" scope="col"><t1>HEROES</t1></th>
-          <th style="width: 8%" scope="col"><t1>GAMES PLAYED</t1></th>
-          <th style="width: 10%" scope="col"><t1>LASY PLAYED</t1></th>
+          <th style="width: 15%" scope="col"><t1>LASY PLAYED</t1></th>
         </tr>
       </thead>
       <tbody>
         {% for player in players %}
           <tr>
-            <th scope="row">{{loop.index}}</th>
-          <td><t1>{{player['nickname']}}</td>
-          <td><a target="_blank" href="http://www.overbuff.com/players/pc/{{player['battletag']}}?mode=competitive">{{player['battletag']}}</a></td>
+          <th scope="row">{{loop.index}}</th>
+          <td>
+            <img src="{{get_html_icon(player['maxRole'])}}" style="width:30px;height:30px;">
+            {{player['nickname']}}
+          </td>
+          <td>
+            <a target="_blank" href="http://www.overbuff.com/players/pc/{{player['battletag']}}?mode=competitive">{{player['battletag']}}</a>
+          </td>
           <td>{{player['maxRank']}}</td>
-          <td>{{player['maxRole']}}</td>
-          <td>{{player['maxRole']}}</td>
-          <td>{{player['gamesPlayed']}}</td>
-          <td>{{player['lastGamePlayed']}}</td>
+          <td>
+            {% if player['maxRole'] == 'damage' %}
+              {% for hero in player['damageHeroes'].split(' ') %}
+                {% if loop.index <= 5 %}
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+
+            {% if player['maxRole'] == 'tank' %}
+              {% for hero in player['tankHeroes'].split(' ') %}
+                {% if loop.index <= 5 %}
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            
+            {% if player['maxRole'] == 'support' %}
+              {% for hero in player['supportHeroes'].split(' ') %}
+                {% if loop.index <= 5 %}
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </td>
+          <!-- <td>
+            <img src="/static/assets/hero_icons/75px-Icon-Sigma.png" style="width:30px;height:30px;">
+            <img src="/static/assets/hero_icons/75px-Icon-Tracer.png" style="width:30px;height:30px;">
+            <img src="/static/assets/hero_icons/75px-Icon-Moira.png" style="width:30px;height:30px;">
+          </td> -->
+          <td>{{last_played_ago(player['lastGamePlayed'])}}</td>
           </tr>
         {% endfor %}
       </tbody>

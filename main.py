@@ -253,9 +253,6 @@ async def update_players_db():
                 if lastGamePlayed is None or lastGamePlayed is '0':
                     lastGamePlayed = bobhelper.utcnow()
 
-                # SOK I LOGGENE FOR A SE OM DETTE ER RETT OG  VI KAN RYDDE
-                logger.debug(f"last game played type: {type(lastGamePlayed)} - {battletag} - {owplayer.gamesPlayed} - {old_player_stats['lastGamePlayed']}")
-
                 data = {
                 'damageRank':       owplayer.get_roleRank('damage'),
                 'tankRank':         owplayer.get_roleRank('tank'),
@@ -315,6 +312,7 @@ async def update_players_db():
         # sleep between loops
         await asyncio.sleep(sleep_between_loops)
 
+# update db
 async def discord_save_channels():
     while True:
         for server in bot.guilds:
@@ -324,8 +322,11 @@ async def discord_save_channels():
                         db.discord_channel_update(server.id, server.name, channel.id, channel.name)
                     else:
                         db.discord_channel_insert(server.id, server.name, channel.id, channel.name)
-        await asyncio.sleep(1800)
 
+        await asyncio.sleep(180)
+
+
+# schedule: daily leaderboards ## ADD MORE VERBOSE OUTPUT TO CONSOLE
 async def post_daily_leaderboards():
     await asyncio.sleep(10)
     
@@ -333,8 +334,8 @@ async def post_daily_leaderboards():
 
     while True:
         now = bobhelper.utcnow()
-        if now.hour >= 8:
-            
+
+        if now.hour >= 20:
             if now.day != current:
                 logger.info(f'seems we have a new day on our hands! day changed from {current} to {now.day}')
                 discord_channel_ids = db.discord_get_channel_ids_for_leaderboards()
@@ -344,14 +345,15 @@ async def post_daily_leaderboards():
                     
                     if discord_embed is not False:
                         channel = bot.get_channel(cid['channelId'])
-                        
+
                         if channel is not None:
-                            message = '**A NEW DAY!** Leaderboards are posted at 10am UTC!'
+                            message = '**A NEW DAY!** Leaderboards are posted at 10PM UTC!'
                             await channel.send(message, embed=discord_embed)
                 
                 current = now.day
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(60)
+
 
 if __name__ == '__main__':
 

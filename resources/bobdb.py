@@ -317,7 +317,7 @@ class BobDb:
         if len(row) > 0:
             for player in row:
                 if player['nickname'] not in nicks:
-                    bobhelper.human_duration_since(player['lastGamePlayed'])
+                    #player['lastGamePlayedHuman'] = bobhelper.human_duration_since(player['lastGamePlayed'])
                     leaderboard.append(player)
                     nicks.append(player['nickname'])
 

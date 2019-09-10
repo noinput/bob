@@ -7,10 +7,10 @@ class BobHelper:
 
     def __init__(self):
         pass
-    
+
     # try to get the most played hero for a role and replace it with a hero emoji
     def most_played_emoji(self, player):
-        
+
         # set custom emjois for roles in leaderboard [print(l) for l in message.guild.emojis]
         role_emoji = bobhelper.emojis_replace(player['maxRole'])
         hero_emoji = ''
@@ -47,7 +47,7 @@ class BobHelper:
             'support':      '<:owsup:614835972215144457>',
             'tank':         '<:owtank:614835972315807754>',
 
-            '^ashe$':       '<:ashe:614947399181271051>',
+            'ashe':         '<:ashe:614947399181271051>',
             'bastion':      '<:bast:614947399357562908>',
             'doomfist':     '<:doom:614947399055573008>',
             'genji':        '<:genji:614947399500300316>',
@@ -86,6 +86,52 @@ class BobHelper:
 
         return emoji
     
+    def html_asset_path(self, asset):
+        replace_map = {
+            'defense':      '/static/assets/role_icons/defense.png',
+            'damage':       '/static/assets/role_icons/offense.png',
+            'support':      '/static/assets/role_icons/support.png',
+            'tank':         '/static/assets/role_icons/tank.png',
+
+            'ashe':         '/static/assets/hero_icons/75px-Icon-ashe.png',
+            'bastion':      '/static/assets/hero_icons/75px-Icon-Bastion.png',
+            'doomfist':     '/static/assets/hero_icons/75px-Icon-Doomfist.png',
+            'genji':        '/static/assets/hero_icons/75px-Icon-Genji.png',
+            'hanzo':        '/static/assets/hero_icons/75px-Icon-Hanzo.png',
+            'junkrat':      '/static/assets/hero_icons/75px-Icon-Junkrat.png',
+            'mccree':       '/static/assets/hero_icons/75px-Icon-McCree.png',
+            'mei':          '/static/assets/hero_icons/75px-Icon-Mei.png',
+            'pharah':       '/static/assets/hero_icons/75px-Icon-Pharah.png',
+            'reaper':       '/static/assets/hero_icons/75px-Icon-Reaper.png',
+            'soldier76':    '/static/assets/hero_icons/75px-Icon-Soldier_76.png',
+            'sombra':       '/static/assets/hero_icons/75px-Icon-Sombra.png',
+            'symmetra':     '/static/assets/hero_icons/75px-Icon-Symmetra.png',
+            'torbjorn':     '/static/assets/hero_icons/75px-Icon-Torbjörn.png',
+            'tracer':       '/static/assets/hero_icons/75px-Icon-Tracer.png',
+            'widowmaker':   '/static/assets/hero_icons/75px-Icon-Widowmaker.png',
+
+            'dVa':          '/static/assets/hero_icons/75px-Icon-D.Va.png',
+            'orisa':        '/static/assets/hero_icons/75px-Icon-Orisa.png',
+            'reinhardt':    '/static/assets/hero_icons/75px-Icon-Reinhardt.png',
+            'roadhog':      '/static/assets/hero_icons/75px-Icon-Roadhog.png',
+            'sigma':        '/static/assets/hero_icons/75px-Icon-Sigma.png',
+            'winston':      '/static/assets/hero_icons/75px-Icon-Winston.png',
+            'wreckingBall': '/static/assets/hero_icons/75px-Icon-Wrecking_Ball.png',
+            'zarya':        '/static/assets/hero_icons/75px-Icon-Zarya.png',
+
+            'ana':          '/static/assets/hero_icons/75px-Icon-Ana.png',
+            'baptiste':     '/static/assets/hero_icons/75px-Icon-Baptiste.png',
+            'brigitte':     '/static/assets/hero_icons/75px-Icon-Brigitte.png',
+            'lucio':        '/static/assets/hero_icons/75px-Icon-Lúcio.png',
+            'mercy':        '/static/assets/hero_icons/75px-Icon-Mercy.png',
+            'moira':        '/static/assets/hero_icons/75px-Icon-Moira.png',
+            'zenyatta':     '/static/assets/hero_icons/75px-Icon-Zenyatta.png'}
+
+        for k, v in replace_map.items():
+            asset = re.sub(k, v, asset)
+
+        return asset
+
     def utcnow(self, ):
         t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
@@ -97,23 +143,25 @@ class BobHelper:
             #print(type(then), type(self.utcnow()))
             duration = self.utcnow() - then
             secs = int(duration.total_seconds())
-            human_duration = f'{secs}seconds'
+            human_duration = f'{secs} seconds'
             if duration.total_seconds() > 60:
                 mins, secs = divmod(int(duration.total_seconds()), 60)
-                human_duration = f'{mins}minutes {secs}seconds'
+                human_duration = f'{mins} minutes {secs} seconds'
 
             if duration.total_seconds() > 3600:
                 mins, secs = divmod(int(duration.total_seconds()), 60)
                 hours, mins = divmod(mins, 60)
-                human_duration = f'{hours}hours {mins}minutes'
+                human_duration = f'{hours} hours {mins} minutes'
             
             if duration.total_seconds() > 86400:
                 mins, secs = divmod(int(duration.total_seconds()), 60)
                 hours, mins = divmod(mins, 60)
                 days, hours = divmod(hours, 24)
-                human_duration = f'{days}days {hours}hours'
+                human_duration = f'{days} days {hours} hours'
             
             #print(f'last match updated was {human_duration} ago')
+            return human_duration
         except Exception as e:
             print(f'{e}')
             print(f'last match updated was NA ago')
+            return False

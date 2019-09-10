@@ -8,6 +8,7 @@ from flask import send_from_directory
 import os
 
 from resources.bobdb import BobDb
+from resources.bobhelper import BobHelper
 
 app = Flask(__name__,
     static_url_path='/static',
@@ -51,17 +52,29 @@ def leaderboards(discord_channel_id):
             'leaderboard.html',
             players=players,
             server_name=discord_names['serverName'],
-            channel_name=discord_names['channelName'])
+            channel_name=discord_names['channelName'],
+            last_played_ago=last_played_ago,
+            get_html_icon=get_html_icon)
 
-        """
-            average_sr=average_sr,
-            num_players=num_players,
-            sqldata=sqldata,
-        #else:
-            #return 'theres nothing here...'
-"""
     except Exception as e:
+        return 'theres nothing here...'
         print(e)
+
+def last_played_ago(then):
+
+    bobhelper = BobHelper()
+    duration = bobhelper.human_duration_since(then)
+
+    if duration is not False:
+        return f'{duration} ago'
+    else:
+        return ''
+
+def get_html_icon(hero):
+    print(f'hero: {hero}')
+    bobhelper = BobHelper()
+    html = bobhelper.html_asset_path(hero)
+    return html
 
 ## BRUK CONFIG
 if __name__ == '__main__':
