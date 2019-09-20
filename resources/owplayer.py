@@ -38,6 +38,9 @@ class OWPlayer:
         except asyncio.TimeoutError:
             print(f'timed out {api_resource}')
             return False
+        
+        except ssl.SSLError:
+            return False
 
         except Exception as e:
             print(f'_http_get failed: {e}')

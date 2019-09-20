@@ -37,14 +37,23 @@ def profile(battletag):
     else:
         return f"Hello player: {battletag} {playerstats}"
 
-@app.route("/leaderboards/<discord_channel_id>")
-def leaderboards(discord_channel_id):
-    print(discord_channel_id)
+@app.route("/leaderboards/<id>")
+def leaderboards(id):
+    print(id)
     try:
         db = BobDb('bob.db')
-        #discord_channel = owdb.discord_channel_exist(short)
-        #if discord_channel:
-            #average_sr, num_players, sqldata = get_sql(discord_channel['channel_id'])
+
+        discord_channel = db.discord_channel_exist(id)
+        
+        print('####', discord_channel)
+
+        if not discord_channel:
+            print('why the fq this trigger')
+            return 'theres nothing here...'
+
+        discord_channel_id = discord_channel['channelId']
+        print('####', discord_channel_id)
+        
         players = db.get_leaderboard(discord_channel_id)
         discord_names = db.discord_channel_names(discord_channel_id)
         
@@ -57,8 +66,9 @@ def leaderboards(discord_channel_id):
             get_html_icon=get_html_icon)
 
     except Exception as e:
-        return 'theres nothing here...'
         print(e)
+        return 'theres nothing here...'
+        
 
 def last_played_ago(then):
 
@@ -71,7 +81,6 @@ def last_played_ago(then):
         return ''
 
 def get_html_icon(hero):
-    print(f'hero: {hero}')
     bobhelper = BobHelper()
     html = bobhelper.html_asset_path(hero)
     return html

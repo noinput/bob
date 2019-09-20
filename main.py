@@ -1,13 +1,16 @@
 import asyncio
 import argparse
+import base64
 import configparser
 import discord
+import hashlib
 import json
 import logging
 import os
 import pathlib
 import sys
 import time
+import re
 
 from logging.handlers import TimedRotatingFileHandler
 
@@ -173,6 +176,7 @@ def build_discord_leaderboard_embed(discord_channel_id):
 
     server_name = discord_names['serverName']
     channel_name = discord_names['channelName']
+    leaderboard_url =  f"{web_base_url}{discord_names['short']}"
 
     embed=discord.Embed(
         title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
@@ -221,6 +225,9 @@ def build_discord_leaderboard_embed(discord_channel_id):
 
     if len(embed_rank_table) > 0:
         embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
+
+    embed.add_field(name=f'\u200B', value=f'>> **[SEE FULL LIST]({leaderboard_url})**', inline=False)
+    print(len(embed))
 
     return embed if i >= 4 else False
 
@@ -318,10 +325,17 @@ async def discord_save_channels():
         for server in bot.guilds:
             for channel in server.channels:
                 if channel.type == discord.ChannelType.text:
+                    # hashlib + re - MOVE THIS TO DB PY?
+                    # generate unique ID. assume no collision
+                    sha1 = hashlib.sha1(str(channel.id).encode('utf-8'))
+                    result = base64.b64encode(sha1.digest())
+                    regex = re.compile('[^a-zA-Z]')
+                    short_id = regex.sub('', str(result)[0:6])
+
                     if db.discord_channel_exist(channel.id):
-                        db.discord_channel_update(server.id, server.name, channel.id, channel.name)
+                        db.discord_channel_update(server.id, server.name, channel.id, channel.name, short_id)
                     else:
-                        db.discord_channel_insert(server.id, server.name, channel.id, channel.name)
+                        db.discord_channel_insert(server.id, server.name, channel.id, channel.name, short_id)
 
         await asyncio.sleep(180)
 
@@ -382,6 +396,8 @@ if __name__ == '__main__':
 
     discord_owner_id = int(cf.get('discord', 'owner_id'))
 
+    web_base_url = cf.get('web', 'base_url')
+
     # create logs directory
     pathlib.Path(logs_dir).mkdir(parents=True, exist_ok=True)
     
@@ -408,6 +424,8 @@ if __name__ == '__main__':
     logger.info(f'database file: {database_file}')
     logger.info(f'logs directory: {logs_dir}')
     logger.info(f'discord owner: {discord_owner_id}')
+    logger.info(f'web base url: {web_base_url}')
+    logger.info(f'----------------------')
     
     try:
         bobhelper = BobHelper()
@@ -417,6 +435,8 @@ if __name__ == '__main__':
         bot.loop.create_task(update_players_db())
         bot.loop.create_task(discord_save_channels())
         bot.loop.create_task(post_daily_leaderboards())
+
         bot.run(cf.get('discord', 'token'))
+    
     except KeyboardInterrupt:
         sys.exit(0)

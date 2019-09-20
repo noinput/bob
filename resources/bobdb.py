@@ -155,27 +155,37 @@ class BobDb:
 
         return row[0] if len(row) > 0 else False
 
-    def discord_channel_exist(self, discord_channel_id):
-        sql = 'SELECT channelId FROM discordChannels WHERE channelId=(?)'
-        row = self.cursor.execute(sql, (discord_channel_id, )).fetchall()
+    def discord_channel_exist(self, discord_channel):
+        sql = '''
+        SELECT
+            channelId 
+        FROM 
+            discordChannels 
+        WHERE 
+            channelId=(?)
+        OR 
+            short=(?)'''
+        row = self.cursor.execute(sql, (discord_channel, discord_channel)).fetchall()
 
-        return True if len(row) > 0 else False
+        return row[0] if len(row) > 0 else False
 
-    def discord_channel_insert(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name):
+    def discord_channel_insert(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name, short):
         sql = '''
         INSERT INTO discordChannels (
             serverId,
             serverName,
             channelId,
-            channelName)
-        VALUES (?, ?, ?, ?)
+            channelName,
+            short)
+        VALUES (?, ?, ?, ?, ?)
         '''
         try:
             self.cursor.execute(sql, (
                 discord_server_id,
                 discord_server_name,
                 discord_channel_id,
-                discord_channel_name))
+                discord_channel_name,
+                short))
             self._commit()
             return True
 
@@ -183,19 +193,20 @@ class BobDb:
             print(f'{e}')
             return False
     
-    def discord_channel_update(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name):
+    def discord_channel_update(self, discord_server_id, discord_server_name, discord_channel_id, discord_channel_name, short):
         sql = '''
         UPDATE discordChannels SET
             serverId=(?),
             serverName=(?),
             channelId=(?),
-            channelName=(?)
+            channelName=(?),
+            short=(?)
         WHERE
             channelId=(?)'''
 
         try:
             self.cursor.execute(sql, (
-                discord_server_id, discord_server_name, discord_channel_id, discord_channel_name, discord_channel_id))
+                discord_server_id, discord_server_name, discord_channel_id, discord_channel_name, short, discord_channel_id))
             self._commit()
             return True
         

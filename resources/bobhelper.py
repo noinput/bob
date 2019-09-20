@@ -28,7 +28,9 @@ class BobHelper:
             if player['maxRole'] == 'support':
                 hero_emoji = emojis_replace(player['supportHeroes'].split(' ')[0])
                 last_rank = db.rank_history_get_last(player['battletag'], 'supportRank')
+            
             return hero_emoji
+        
         except:
             pass
 
@@ -132,7 +134,7 @@ class BobHelper:
 
         return asset
 
-    def utcnow(self, ):
+    def utcnow(self):
         t = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         return datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S')
 
