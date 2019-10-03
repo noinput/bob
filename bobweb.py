@@ -2,6 +2,7 @@ import datetime
 
 from flask import Flask, jsonify
 from flask import render_template
+from flask import request
 
 from flask import send_from_directory
 
@@ -29,15 +30,20 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'webstats/static'),
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
-@app.route("/profile/<battletag>")
-def profile(battletag):
-    playerstats = owdb.playerGetDBdata(btag=battletag)
-    if not owdb.playerInDB(battletag):
-        return f'player not found {battletag}'
-    else:
-        return f"Hello player: {battletag} {playerstats}"
+@app.route('/player/<battletag>')
+def player(battletag):
+    db = BobDb('bob.db')
+    playerdata = db.player_get(battletag)
+    
+    if not playerdata:
+        return 'theres nothing here...'
+    
+    return render_template(
+        'player.html',
+        last_played_ago=last_played_ago,
+        player=playerdata)
 
-@app.route("/leaderboards/<id>")
+@app.route('/leaderboards/<id>')
 def leaderboards(id):
     print(id)
     try:

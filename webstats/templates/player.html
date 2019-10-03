@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Player</title>
+  </head>
+  <body>
+    <br>
+    <form>
+      <div class="container">
+      
+      <div class="form-row">
+        <div class="col-md-3 mb-3">
+          <label for="battletag">Battletag</label>
+          <input type="text" class="form-control" id="battletag" value="{{player['battletag']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="addedDateUtc">Added UTC</label>
+          <input type="text" class="form-control" id="addedDateUtc" style="width: 200px" value="{{player['addedDateUtc']}}" disabled>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="col-md-3 mb-3">
+          <label for="private">Private</label>
+          {% if player['private'] == '1' %}
+              <input type="text" class="form-control is-invalid" id="private" value="Yes!" disabled>
+          {% else %}
+              <input type="text" class="form-control is-valid" id="private" value="No" disabled>
+          {% endif %}
+        </div>
+        <div class="col-md-3 mb-2">
+          <label for="apiLastStatus">API Last Status</label>
+          {% if player['apiLastStatus'] != '200' %}
+              <input type="text" class="form-control is-invalid" id="apiLastStatus" value="{{player['apiLastStatus']}}" disabled>
+          {% else %}
+              <input type="text" class="form-control is-valid" id="apiLastStatus" value="{{player['apiLastStatus']}}" disabled>
+          {% endif %}
+        </div>
+        <div class="col-md-3 mb-2">
+          <label for="apiLastChecked">API Last Checked</label>
+          <input type="text" class="form-control" id="apiLastChecked" style="width: 250px" value="{{last_played_ago(player['apiLastChecked'])}}" disabled>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="col-md-3 mb-3">
+          <label for="lastPlayed">Last Played</label>
+          <input type="text" class="form-control" id="lastPlayed" placeholder="Last name" value="{{last_played_ago(player['lastGamePlayed'])}}" disabled="">
+        </div>
+      </div>
+      
+      <br>
+      
+      <div class="form-row">
+        <div class="col-md-2 mb-2">
+          <label for="damageRank">Damage Rank</label>
+          <input type="text" class="form-control" id="damageRank" style="width: 100px" value="{{player['damageRank']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="tankRank">Tank Rank</label>
+          <input type="text" class="form-control" id="tankRank" style="width: 100px" value="{{player['tankRank']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="supportRank">Support Rank</label>
+          <input type="text" class="form-control" id="supportRank" style="width: 100px" value="{{player['supportRank']}}" disabled>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="col-md-2 mb-2">
+          <label for="gamesPlayed">Games Played</label>
+          <input type="text" class="form-control" id="gamesPlayed" style="width: 100px" value="{{player['gamesPlayed']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="gamesWon">Games Won</label>
+          <input type="text" class="form-control" id="gamesWon" style="width: 100px" value="{{player['gamesWon']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="gamesLost">Games Lost</label>
+          <input type="text" class="form-control" id="gamesLost" style="width: 100px" value="{{player['gamesLost']}}" disabled>
+        </div>
+        <div class="col-md-2 mb-2">
+          <label for="gamesTied">Games Tied</label>
+          <input type="text" class="form-control" id="gamesTied" style="width: 100px" value="{{player['gamesTied']}}" disabled>
+        </div>
+      </div>
+
+    </div>
+    </form>
+</body>

@@ -226,7 +226,7 @@ def build_discord_leaderboard_embed(discord_channel_id):
     if len(embed_rank_table) > 0:
         embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
 
-    embed.add_field(name=f'\u200B', value=f'>> **[SEE FULL LIST]({leaderboard_url})**', inline=False)
+    embed.add_field(name=f'\u200B', value=f'**[SEE FULL LIST]({leaderboard_url})**', inline=False)
     print(len(embed))
 
     return embed if i >= 4 else False
@@ -341,6 +341,7 @@ async def discord_save_channels():
 
 
 # schedule: daily leaderboards ## ADD MORE VERBOSE OUTPUT TO CONSOLE
+## need fix - THIS WILL NOT WORK IF BOT IS STARTED SAME DAY SINCE current = now.day etc
 async def post_daily_leaderboards():
     await asyncio.sleep(10)
     
