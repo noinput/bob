@@ -100,7 +100,7 @@ async def on_message(message):
                 # check if player is already added on discord channel
                 if db.discord_player_is_on_channel(battletag, message.channel.id):
                     logger.info(f'{battletag} already added on {ds}')
-                    await message.channel.send(f'{message.author.mention} **{battletag}** already added!')
+                    await message.channel.send(f'{message.author.mention} **{battletag}** already added! {web_base_url}/player/{battletag}')
                 else:
                     if db.discord_player_add_to_channel(message.channel.id, battletag, nickname, message.author.id, bobhelper.utcnow()):
                         logger.info(f'{battletag} added as {nickname} on {ds}')
@@ -176,10 +176,10 @@ def build_discord_leaderboard_embed(discord_channel_id):
 
     server_name = discord_names['serverName']
     channel_name = discord_names['channelName']
-    leaderboard_url =  f"{web_base_url}{discord_names['short']}"
+    leaderboard_url =  f"{web_base_url}/leaderboards/{discord_names['short']}"
 
     embed=discord.Embed(
-        title=f':trophy: Leaderboards for {channel_name} @ {server_name} :trophy:',
+        title=f':trophy: {channel_name} @ {server_name} :trophy:',
         description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
 
     embed_rank_table = ''
@@ -226,7 +226,7 @@ def build_discord_leaderboard_embed(discord_channel_id):
     if len(embed_rank_table) > 0:
         embed.add_field(name=f'\u200B', value=f'{embed_rank_table}', inline=False)
 
-    embed.add_field(name=f'\u200B', value=f'**[SEE FULL LIST]({leaderboard_url})**', inline=False)
+    embed.add_field(name=f'\u200B', value=f'**[See the full list here!]({leaderboard_url})**', inline=False)
     print(len(embed))
 
     return embed if i >= 4 else False

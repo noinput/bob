@@ -299,11 +299,11 @@ class BobDb:
             MAX(players.damageRank, players.tankRank, players.supportRank) as maxRank,
             
             CASE
-                WHEN players.damageRank > players.tankRank AND players.damageRank > players.supportRank 
+                WHEN players.damageRank >= players.tankRank AND players.damageRank >= players.supportRank 
                         THEN 'damage'
-                WHEN players.tankRank > players.damageRank AND players.tankRank > players.supportRank
+                WHEN players.tankRank >= players.damageRank AND players.tankRank >= players.supportRank
                         THEN 'tank'
-                WHEN players.supportRank > players.damageRank AND players.supportRank > players.tankRank
+                WHEN players.supportRank >= players.damageRank AND players.supportRank >= players.tankRank
                         THEN 'support'
                 ELSE False
             END AS maxRole

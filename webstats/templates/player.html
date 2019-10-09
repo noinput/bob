@@ -7,7 +7,7 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <title>Player</title>
+    <title>DEBUG: {{player['battletag']}}</title>
   </head>
   <body>
     <br>
@@ -60,15 +60,27 @@
       <div class="form-row">
         <div class="col-md-2 mb-2">
           <label for="damageRank">Damage Rank</label>
-          <input type="text" class="form-control" id="damageRank" style="width: 100px" value="{{player['damageRank']}}" disabled>
+          {% if player['damageRank'] > 1 %}
+            <input type="text" class="form-control is-valid" id="damageRank" style="width: 100px" value="{{player['damageRank']}}" disabled>
+          {% else %}
+            <input type="text" class="form-control is-invalid" id="damageRank" style="width: 100px" value="0" disabled>
+          {% endif %}
         </div>
         <div class="col-md-2 mb-2">
           <label for="tankRank">Tank Rank</label>
-          <input type="text" class="form-control" id="tankRank" style="width: 100px" value="{{player['tankRank']}}" disabled>
+          {% if player['tankRank'] > 1 %}
+            <input type="text" class="form-control is-valid" id="tankRank" style="width: 100px" value="{{player['tankRank']}}" disabled>
+          {% else %}
+            <input type="text" class="form-control is-invalid" id="tankRank" style="width: 100px" value="0" disabled>
+          {% endif %}
         </div>
         <div class="col-md-2 mb-2">
           <label for="supportRank">Support Rank</label>
-          <input type="text" class="form-control" id="supportRank" style="width: 100px" value="{{player['supportRank']}}" disabled>
+          {% if player['supportRank'] > 1 %}
+            <input type="text" class="form-control is-valid" id="supportRank" style="width: 100px" value="{{player['supportRank']}}" disabled>
+          {% else %}
+            <input type="text" class="form-control is-invalid" id="supportRank" style="width: 100px" value="0" disabled>
+          {% endif %}
         </div>
       </div>
 

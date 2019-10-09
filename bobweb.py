@@ -1,5 +1,3 @@
-import datetime
-
 from flask import Flask, jsonify
 from flask import render_template
 from flask import request
@@ -10,6 +8,7 @@ import os
 
 from resources.bobdb import BobDb
 from resources.bobhelper import BobHelper
+
 
 app = Flask(__name__,
     static_url_path='/static',
@@ -50,19 +49,15 @@ def leaderboards(id):
         db = BobDb('bob.db')
 
         discord_channel = db.discord_channel_exist(id)
-        
-        print('####', discord_channel)
 
         if not discord_channel:
-            print('why the fq this trigger')
             return 'theres nothing here...'
 
         discord_channel_id = discord_channel['channelId']
-        print('####', discord_channel_id)
         
         players = db.get_leaderboard(discord_channel_id)
         discord_names = db.discord_channel_names(discord_channel_id)
-        
+
         return render_template(
             'leaderboard.html',
             players=players,
@@ -72,9 +67,8 @@ def leaderboards(id):
             get_html_icon=get_html_icon)
 
     except Exception as e:
-        print(e)
+        print(f'### FAIL: {e}')
         return 'theres nothing here...'
-        
 
 def last_played_ago(then):
 
@@ -89,6 +83,8 @@ def last_played_ago(then):
 def get_html_icon(hero):
     bobhelper = BobHelper()
     html = bobhelper.html_asset_path(hero)
+    #print(html)
+    print(type(html))
     return html
 
 ## BRUK CONFIG
