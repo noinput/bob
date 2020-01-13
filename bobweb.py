@@ -20,14 +20,10 @@ app = Flask(__name__,
 def index():
     return 'theres nothing here...'
 
-@app.route('/robots.txt')
-def robots():
-    return 'User-agent: *\nDisallow: /'
-
 @app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'webstats/static'),
-                          'favicon.ico',mimetype='image/vnd.microsoft.icon')
+@app.route('/robots.txt')
+def static_from_root():
+    return send_from_directory(app.static_folder, request.path[1:])
 
 @app.route('/player/<battletag>')
 def player(battletag):
@@ -83,8 +79,6 @@ def last_played_ago(then):
 def get_html_icon(hero):
     bobhelper = BobHelper()
     html = bobhelper.html_asset_path(hero)
-    #print(html)
-    print(type(html))
     return html
 
 ## BRUK CONFIG

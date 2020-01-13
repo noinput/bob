@@ -179,8 +179,9 @@ def build_discord_leaderboard_embed(discord_channel_id):
     leaderboard_url =  f"{web_base_url}/leaderboards/{discord_names['short']}"
 
     embed=discord.Embed(
-        title=f':trophy: {channel_name} @ {server_name} :trophy:',
-        description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
+        title=f':trophy: {channel_name} @ {server_name} :trophy:')
+        #description=f'`.sradd [nick] [battletag]` to join the leaderboards!')
+        #description=f'use command **boblink** to invite B.o.B to your own server.\n`.sradd [nick] [battletag]` to join the leaderboards!')
 
     embed_rank_table = ''
     i = 0

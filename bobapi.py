@@ -16,9 +16,14 @@ def jsonplayer(battletag):
     playerdata = db.player_get(battletag)
     
     if not playerdata:
-        return jsonify({'data': { 'status' :'NOT_FOUND' }})
+        return jsonify({
+            'message': 'not found',
+            'data': {
+                'status' :'NOT_FOUND' 
+                }})
     
     return jsonify({
+        'message': 'OK',
         'data': {
             'status'            :'OK',
             'battletag'         :playerdata['battletag'],

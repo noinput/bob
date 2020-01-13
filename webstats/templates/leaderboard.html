@@ -45,7 +45,7 @@
             {% if player['maxRole'] == 'damage' %}
               {% for hero in player['damageHeroes'].split(' ') %}
                 {% if loop.index <= 5 %}
-                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;" class="rounded-circle">
                 {% endif %}
               {% endfor %}
             {% endif %}
@@ -53,7 +53,7 @@
             {% if player['maxRole'] == 'tank' %}
               {% for hero in player['tankHeroes'].split(' ') %}
                 {% if loop.index <= 5 %}
-                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;" class="rounded-circle">
                 {% endif %}
               {% endfor %}
             {% endif %}
@@ -61,7 +61,7 @@
             {% if player['maxRole'] == 'support' %}
               {% for hero in player['supportHeroes'].split(' ') %}
                 {% if loop.index <= 5 %}
-                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;">
+                  <img src="{{get_html_icon(hero)}}" style="width:30px;height:30px;" class="rounded-circle">
                 {% endif %}
               {% endfor %}
             {% endif %}
