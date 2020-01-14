@@ -1,0 +1,12 @@
+server {
+    listen 443 ssl;
+    server_name sr.example.com;
+
+    ssl_certificate /home/user/bob/webstats/cert/cert.pem;
+    ssl_certificate_key /home/user/bob/webstats/cert/privkey.pem;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/user/bob/bobweb.sock;
+    }
+}

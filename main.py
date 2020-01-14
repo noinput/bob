@@ -310,7 +310,7 @@ async def update_players_db():
                 status = '404 (not found)'
                 count_404 += 1
 
-            out = f'{battletag:<30} {status:<15} [{i}/{count_total} ok:{count_ok} fail:{count_fail} private:{count_private} 404:{count_404}]'
+            out = f'[{i}/{count_total}] ok:{count_ok} fail:{count_fail} private:{count_private} 404:{count_404} - {status:<8} {battletag:<10} '
 
             if status == 'FAIL':
                 logger.critical(out)
