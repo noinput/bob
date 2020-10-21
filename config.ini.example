@@ -1,0 +1,19 @@
+[discord]
+token=goeshere
+cmd_prefix=.sr
+; discord id for owner us for .srgiveadmin .srtakeadmin
+owner_id=111111111111111111
+
+[paths]
+logs=/home/user/dev/python/bob/logs/
+
+[general]
+loglevel=INFO
+database_file=/home/user/dev/python/bob/bob.db
+ignore_matches_older_than_hours=-1
+
+[timers]
+sleep_between_loops=600
+
+[web]
+base_url=https://sr.localboot.com
